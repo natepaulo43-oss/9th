@@ -1,31 +1,29 @@
 import React from 'react';
-import styled from 'styled-components';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import BrandSection from './components/BrandSection';
-import Services from './components/Services';
-import Portfolio from './components/Portfolio';
-import About from './components/About';
-import Contact from './components/Contact';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';
 import Footer from './components/Footer';
-
-const AppContainer = styled.div`
-  min-height: 100vh;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-`;
+import Home from './pages/Home';
+import Shop from './pages/Shop';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import './App.css';
 
 function App() {
   return (
-    <AppContainer>
-      <Navbar />
-      <Hero />
-      <BrandSection />
-      <Services />
-      <Portfolio />
-      <About />
-      <Contact />
-      <Footer />
-    </AppContainer>
+    <Router>
+      <div className="App">
+        <Navigation />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

@@ -1,0 +1,116 @@
+.about-page {
+  min-height: 100vh;
+  padding: 120px 2rem 4rem;
+  background-color: var(--color-black);
+}
+
+.about-header {
+  text-align: center;
+  margin-bottom: 5rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.about-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-white);
+}
+
+.about-content {
+  max-width: 1000px;
+  margin: 0 auto 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+.about-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-white);
+}
+
+.section-content {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: var(--color-gray);
+  line-height: 1.8;
+  max-width: 800px;
+}
+
+.about-visual {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.visual-block {
+  width: 100%;
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 5rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-gray);
+  transition: all 0.3s ease;
+}
+
+.visual-block:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  color: var(--color-white);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .about-page {
+    padding: 100px 1.5rem 3rem;
+  }
+
+  .about-header {
+    margin-bottom: 3rem;
+  }
+
+  .about-content {
+    gap: 3rem;
+    margin-bottom: 4rem;
+  }
+
+  .about-visual {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-page {
+    padding: 90px 1rem 2rem;
+  }
+
+  .about-content {
+    gap: 2.5rem;
+  }
+
+  .about-section {
+    gap: 1rem;
+  }
+}
+
