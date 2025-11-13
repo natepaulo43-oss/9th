@@ -146,7 +146,7 @@ const About: React.FC = () => {
                 <p>Projects Completed</p>
               </Stat>
               <Stat>
-                <h3>95%</h3>
+                <h3>100%</h3>
                 <p>Client Satisfaction</p>
               </Stat>
               <Stat>
