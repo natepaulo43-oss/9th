@@ -2,15 +2,24 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import './Contact.css';
 
+type FormState = {
+  name: string;
+  email: string;
+  message: string;
+  'bot-field': string;
+};
+
 const Contact: React.FC = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormState>({
     name: '',
     email: '',
     message: '',
+    'bot-field': '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const formName = 'contact';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -24,16 +33,35 @@ const Contact: React.FC = () => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
-    // Simulate form submission (replace with actual API call)
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const formBody = new URLSearchParams({
+        'form-name': formName,
+        ...formData,
+      }).toString();
+
+      await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formBody,
+      });
+
       setSubmitStatus('success');
-      setFormData({ name: '', email: '', message: '' });
-      
+      setFormData({
+        name: '',
+        email: '',
+        message: '',
+        'bot-field': '',
+      });
+
       setTimeout(() => {
         setSubmitStatus('idle');
       }, 3000);
-    }, 1000);
+    } catch (error) {
+      console.error('Netlify form submission failed:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const socialLinks = [
@@ -70,7 +98,26 @@ const Contact: React.FC = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
         >
-          <form className="contact-form" onSubmit={handleSubmit}>
+          <form
+            className="contact-form"
+            name={formName}
+            method="POST"
+            data-netlify="true"
+            data-netlify-honeypot="bot-field"
+            onSubmit={handleSubmit}
+          >
+            <input type="hidden" name="form-name" value={formName} />
+            <div hidden>
+              <label htmlFor="bot-field">
+                Don’t fill this out if you’re human
+                <input
+                  id="bot-field"
+                  name="bot-field"
+                  value={formData['bot-field']}
+                  onChange={handleChange}
+                />
+              </label>
+            </div>
             <div className="form-group">
               <label htmlFor="name">Name</label>
               <input
