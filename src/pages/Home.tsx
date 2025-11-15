@@ -9,7 +9,7 @@ const Home: React.FC = () => {
     const handleScroll = () => {
       if (logoRef.current) {
         const scrolled = window.scrollY;
-        const rotation = scrolled * 0.5;
+        const rotation = scrolled * 2.5;
         logoRef.current.style.transform = `rotateY(${rotation}deg)`;
       }
     };
@@ -42,7 +42,7 @@ const Home: React.FC = () => {
               </div>
               <div className="logo-face logo-back">
                 <img
-                  src="/images/9thform_logo_white.png"
+                  src="/images/9thform_logo_white_flame.png"
                   alt="9thform Logo"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -50,8 +50,26 @@ const Home: React.FC = () => {
                   }}
                 />
               </div>
-              <div className="logo-face logo-right"></div>
-              <div className="logo-face logo-left"></div>
+              <div className="logo-face logo-right">
+                <img
+                  src="/images/cream_logo.png"
+                  alt="9thform Logo"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/images/logo1.png';
+                  }}
+                />
+              </div>
+              <div className="logo-face logo-left">
+                <img
+                  src="/images/Surflogo.png"
+                  alt="9thform Logo"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/images/logo1.png';
+                  }}
+                />
+              </div>
               <div className="logo-face logo-top"></div>
               <div className="logo-face logo-bottom"></div>
             </div>
@@ -63,9 +81,13 @@ const Home: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
           >
-            ACTION SPORTS
+            9THFORM
             <br />
-            APPAREL
+
+            <br />
+            ALWAYS IN
+            <br />
+            MOTION
           </motion.h1>
         </div>
 
@@ -91,7 +113,7 @@ const Home: React.FC = () => {
         <div className="cta-content">
           <h2 className="cta-title">EXPLORE THE COLLECTION</h2>
           <p className="cta-description">
-            Premium action sports apparel designed for the modern athlete
+            Premium apparel designed for those who stay in motion.
           </p>
           <Link to="/shop" className="cta-button">
             SHOP NOW
@@ -110,17 +132,17 @@ const Home: React.FC = () => {
         >
           <div className="visual-item">
             <div className="visual-placeholder">
-              <span>9THFORM</span>
+              <img src="/images/Thrown.JPG" alt="Hat thrown" />
             </div>
           </div>
           <div className="visual-item">
             <div className="visual-placeholder">
-              <span>ACTION</span>
+              <img src="/images/behind_hat.JPG" alt="Rider wearing 9thform hat" />
             </div>
           </div>
           <div className="visual-item">
             <div className="visual-placeholder">
-              <span>SPORTS</span>
+              <img src="/images/Tree_shoot.PNG" alt="Dynamic jump shot" />
             </div>
           </div>
         </motion.div>
