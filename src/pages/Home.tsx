@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import './Home.css';
 
 const Home: React.FC = () => {
   const logoRef = useRef<HTMLDivElement>(null);
