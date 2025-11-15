@@ -109,7 +109,7 @@
 /* Scroll Indicator */
 .hero-section .scroll-indicator {
   position: absolute;
-  bottom: -3rem;
+  bottom: -14rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -124,7 +124,7 @@
 }
 
 .scroll-line {
-  width: 1px;
+  width: 3px;
   height: 40px;
   background: linear-gradient(180deg, var(--color-white) 0%, transparent 100%);
   animation: scrollPulse 2s ease-in-out infinite;
