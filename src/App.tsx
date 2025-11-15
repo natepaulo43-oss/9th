@@ -11,7 +11,7 @@ import './App.css';
 function App() {
   return (
     <Router>
-      <div className="App">
+      <div className="App" style={{ minHeight: '100vh', backgroundColor: '#0a0a0a' }}>
         <Navigation />
         <main className="main-content">
           <Routes>

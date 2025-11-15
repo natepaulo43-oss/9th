@@ -20,7 +20,7 @@ const Home: React.FC = () => {
   }, []);
 
   return (
-    <div className="home-page">
+    <div className="home-page" style={{ minHeight: '100vh', paddingTop: '80px' }}>
       {/* Hero Section with Rotating 3D Logo */}
       <section className="hero-section">
         <div className="hero-content">
