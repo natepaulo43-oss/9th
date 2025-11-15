@@ -83,14 +83,10 @@ const Home: React.FC = () => {
           >
             9THFORM
             <br />
-
-            <br />
-            ALWAYS IN
-            <br />
-            MOTION
           </motion.h1>
         </div>
 
+        <div style={{ marginTop: '5rem' }}>
         <motion.div
           className="scroll-indicator"
           initial={{ opacity: 0 }}
@@ -100,6 +96,7 @@ const Home: React.FC = () => {
           <div className="scroll-line"></div>
           <span>Scroll</span>
         </motion.div>
+        </div>
       </section>
 
       {/* Shop CTA Section */}
