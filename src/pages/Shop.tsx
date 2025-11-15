@@ -17,22 +17,26 @@ const Shop: React.FC = () => {
   const products: Product[] = [
     {
       id: 1,
-      name: '9thform Hat',
-      description: 'Premium action sports cap featuring the iconic 9thform logo. Designed for comfort and style.',
-      price: '$35.00',
-      image: '/images/9thform_logo_white.png',
+      name: 'Canvas 9thform Skate Hat',
+      description: 'Premium canvas surf style hat with iconic 9thform skate logo. Designed for comfort and style. ',
+      price: 'Coming Soon...',
+      image: '/images/skatecap.png',
       images: [
-        '/images/9thform_logo_white.png',
-        '/images/9thform_logo_white_flame.png',
-        '/images/9thform_logo_white_ski.png',
+        '/images/skatecap.png',
+        '/images/behind_hat.jpg',
+        '/images/treehat.jpg',
       ],
     },
     {
       id: 2,
-      name: '9thform Shirt',
-      description: 'Classic action sports t-shirt with bold 9thform branding. Made from premium materials.',
-      price: '$45.00',
-      image: '/images/9thform_logo_all_white_transparent_text_v3.png',
+      name: 'Canvas 9thform Falling Guy Hat',
+      description: 'Premium canvas surf hat with 9thform Falling Guy logo. Designed for comfort and style.',
+      price: 'Coming Soon...',
+    image: '/images/aspect_white.png',
+      images: [
+        '/images/aspect_white.png',
+        '/images/Thrown.JPG',
+      ],
     },
   ];
 
@@ -66,7 +70,7 @@ const Shop: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8 }}
         >
-          Premium Action Sports Apparel
+          Always in Motion.
         </motion.p>
       </div>
 
@@ -81,15 +85,17 @@ const Shop: React.FC = () => {
             whileHover={{ y: -5 }}
           >
             <div className="product-image-container">
-              <img
-                src={getCurrentImage(product)}
-                alt={product.name}
-                className="product-image"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/images/logo1.png';
-                }}
-              />
+              <div className="product-image-frame">
+                <img
+                  src={getCurrentImage(product)}
+                  alt={product.name}
+                  className="product-image"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/images/logo1.png';
+                  }}
+                />
+              </div>
               {product.images && product.images.length > 1 && (
                 <div className="image-thumbnails">
                   {product.images.map((img, imgIndex) => (
