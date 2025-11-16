@@ -27,9 +27,11 @@
 
 /* 3D Logo Container */
 .logo-3d-container {
+  --cube-size: 300px;
+  --cube-depth: calc(var(--cube-size) / 2);
   perspective: 1000px;
-  width: 300px;
-  height: 300px;
+  width: var(--cube-size);
+  height: var(--cube-size);
   margin: 0 auto;
 }
 
@@ -53,8 +55,8 @@
 
 .logo-face {
   position: absolute;
-  width: 300px;
-  height: 300px;
+  width: var(--cube-size);
+  height: var(--cube-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,27 +73,27 @@
 }
 
 .logo-front {
-  transform: rotateY(0deg) translateZ(150px);
+  transform: rotateY(0deg) translateZ(var(--cube-depth));
 }
 
 .logo-back {
-  transform: rotateY(180deg) translateZ(150px);
+  transform: rotateY(180deg) translateZ(var(--cube-depth));
 }
 
 .logo-right {
-  transform: rotateY(90deg) translateZ(150px);
+  transform: rotateY(90deg) translateZ(var(--cube-depth));
 }
 
 .logo-left {
-  transform: rotateY(-90deg) translateZ(150px);
+  transform: rotateY(-90deg) translateZ(var(--cube-depth));
 }
 
 .logo-top {
-  transform: rotateX(90deg) translateZ(150px);
+  transform: rotateX(90deg) translateZ(var(--cube-depth));
 }
 
 .logo-bottom {
-  transform: rotateX(-90deg) translateZ(150px);
+  transform: rotateX(-90deg) translateZ(var(--cube-depth));
 }
 
 /* Hero Title */
@@ -278,46 +280,7 @@
   }
 
   .logo-3d-container {
-    width: 200px;
-    height: 200px;
-  }
-
-  .logo-face {
-    width: 200px;
-    height: 200px;
-  }
-
-  .logo-front,
-  .logo-back,
-  .logo-right,
-  .logo-left,
-  .logo-top,
-  .logo-bottom {
-    transform: translateZ(100px);
-  }
-
-  .logo-front {
-    transform: rotateY(0deg) translateZ(100px);
-  }
-
-  .logo-back {
-    transform: rotateY(180deg) translateZ(100px);
-  }
-
-  .logo-right {
-    transform: rotateY(90deg) translateZ(100px);
-  }
-
-  .logo-left {
-    transform: rotateY(-90deg) translateZ(100px);
-  }
-
-  .logo-top {
-    transform: rotateX(90deg) translateZ(100px);
-  }
-
-  .logo-bottom {
-    transform: rotateX(-90deg) translateZ(100px);
+    --cube-size: 220px;
   }
 
   .shop-cta-section {
@@ -341,46 +304,7 @@
   }
 
   .logo-3d-container {
-    width: 150px;
-    height: 150px;
-  }
-
-  .logo-face {
-    width: 150px;
-    height: 150px;
-  }
-
-  .logo-front,
-  .logo-back,
-  .logo-right,
-  .logo-left,
-  .logo-top,
-  .logo-bottom {
-    transform: translateZ(75px);
-  }
-
-  .logo-front {
-    transform: rotateY(0deg) translateZ(75px);
-  }
-
-  .logo-back {
-    transform: rotateY(180deg) translateZ(75px);
-  }
-
-  .logo-right {
-    transform: rotateY(90deg) translateZ(75px);
-  }
-
-  .logo-left {
-    transform: rotateY(-90deg) translateZ(75px);
-  }
-
-  .logo-top {
-    transform: rotateX(90deg) translateZ(75px);
-  }
-
-  .logo-bottom {
-    transform: rotateX(-90deg) translateZ(75px);
+    --cube-size: 170px;
   }
 
   .cta-button {
