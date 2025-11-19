@@ -25,53 +25,22 @@ const formatCurrency = (value: number, currency: string = 'usd') =>
 
 const DEFAULT_LOCAL_STRIPE_ENDPOINT = 'http://localhost:5001/thform-33f71/us-central1/api/stripe';
 const DEFAULT_REMOTE_STRIPE_ENDPOINT = 'https://us-central1-thform-33f71.cloudfunctions.net/api/stripe';
+const NETLIFY_STRIPE_PROXY_PATH = '/stripe';
 
 const resolveCheckoutEndpoint = () => {
-  const resolveApiBaseUrl = () => {
-    if (typeof window === 'undefined') {
-      return '';
-    }
-
-    if (window.location.hostname === 'localhost') {
-      return 'http://127.0.0.1:5001/thform-33f71/us-central1/api';
-    }
-
-    // Production requests stay same-origin and get proxied to Firebase via Netlify redirects.
-    return '';
-  };
-
-  const buildApiUrl = (path: string) => {
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    const base = resolveApiBaseUrl();
-    return base ? `${base}${normalizedPath}` : normalizedPath;
-  };
-
-  const envOverride = process.env.REACT_APP_STRIPE_ENDPOINT?.trim();
-  if (envOverride) {
-    return envOverride.replace(/\/$/, '');
+  if (typeof window === 'undefined') {
+    return DEFAULT_REMOTE_STRIPE_ENDPOINT;
   }
 
-  const isBrowser = typeof window !== 'undefined';
-  const useLocalFunctions =
-    isBrowser &&
-    window.location.hostname === 'localhost' &&
-    process.env.REACT_APP_USE_LOCAL_FUNCTIONS === 'true';
+  const hostname = window.location.hostname.toLowerCase();
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
-  if (useLocalFunctions) {
-    const localOverride = process.env.REACT_APP_LOCAL_STRIPE_ENDPOINT?.trim();
-    return (localOverride || DEFAULT_LOCAL_STRIPE_ENDPOINT).replace(/\/$/, '');
+  if (isLocalhost) {
+    return DEFAULT_LOCAL_STRIPE_ENDPOINT;
   }
 
-  // Prefer Netlify rewrite when explicitly requested, otherwise hit Cloud Function directly.
-  if (
-    isBrowser &&
-    process.env.REACT_APP_USE_NETLIFY_STRIPE_PROXY === 'true' &&
-    window.location.hostname !== 'localhost'
-  ) {
-    return buildApiUrl('/stripe');
-  }
-
-  return DEFAULT_REMOTE_STRIPE_ENDPOINT;
+  // Production traffic stays same-origin and is proxied via Netlify redirects.
+  return NETLIFY_STRIPE_PROXY_PATH;
 };
 
 const CHECKOUT_ENDPOINT = resolveCheckoutEndpoint();
