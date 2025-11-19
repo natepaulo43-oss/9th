@@ -1,0 +1,315 @@
+.home-page {
+  width: 100%;
+  min-height: 100vh;
+  padding-top: 80px;
+}
+
+/* Hero Section */
+.hero-section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 4rem 2rem 8rem;
+  background: linear-gradient(180deg, var(--color-black) 0%, #1a1a1a 100%);
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rem;
+  max-width: 1200px;
+  width: 100%;
+}
+
+/* 3D Logo Container */
+.logo-3d-container {
+  --cube-size: 300px;
+  --cube-depth: calc(var(--cube-size) / 2);
+  perspective: 1000px;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  margin: 0 auto;
+}
+
+.logo-3d {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: rotate3d 20s linear infinite;
+  transition: transform 0.1s ease-out;
+}
+
+@keyframes rotate3d {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+.logo-face {
+  position: absolute;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backface-visibility: hidden;
+}
+
+.logo-face img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.logo-front {
+  transform: rotateY(0deg) translateZ(var(--cube-depth));
+}
+
+.logo-back {
+  transform: rotateY(180deg) translateZ(var(--cube-depth));
+}
+
+.logo-right {
+  transform: rotateY(90deg) translateZ(var(--cube-depth));
+}
+
+.logo-left {
+  transform: rotateY(-90deg) translateZ(var(--cube-depth));
+}
+
+.logo-top {
+  transform: rotateX(90deg) translateZ(var(--cube-depth));
+}
+
+.logo-bottom {
+  transform: rotateX(-90deg) translateZ(var(--cube-depth));
+}
+
+/* Hero Title */
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: var(--color-white);
+}
+
+/* Scroll Indicator */
+.hero-section .scroll-indicator {
+  position: absolute;
+  bottom: -14rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 2.5rem;
+  color: var(--color-gray);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scroll-line {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(180deg, var(--color-white) 0%, transparent 100%);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(10px);
+  }
+}
+
+/* Shop CTA Section */
+.shop-cta-section {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  background-color: var(--color-black);
+}
+
+.cta-content {
+  text-align: center;
+  max-width: 800px;
+}
+
+.cta-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  color: var(--color-white);
+}
+
+.cta-description {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--color-gray);
+  margin-bottom: 3rem;
+  line-height: 1.8;
+}
+
+.cta-button {
+  display: inline-block;
+  padding: 1.25rem 3rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-black);
+  background-color: var(--color-white);
+  border: 2px solid var(--color-white);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-black);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.cta-button:hover {
+  color: var(--color-white);
+  transform: translateY(-2px);
+}
+
+.cta-button:hover::before {
+  left: 0;
+}
+
+/* Brand Visual Section */
+.brand-visual-section {
+  padding: 6rem 2rem;
+  background-color: #0f0f0f;
+}
+
+.visual-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.visual-item {
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.visual-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-gray);
+  transition: all 0.3s ease;
+}
+
+.visual-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: grayscale(20%) brightness(0.9);
+}
+
+.visual-item:hover .visual-placeholder {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  color: var(--color-white);
+  transform: scale(1.02);
+}
+
+.visual-item:hover .visual-placeholder img {
+  transform: scale(1.05);
+  filter: grayscale(0%) brightness(1);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 2rem 1.5rem;
+    min-height: 90vh;
+  }
+
+  .hero-content {
+    gap: 3rem;
+  }
+
+  .logo-3d-container {
+    --cube-size: 220px;
+  }
+
+  .shop-cta-section {
+    padding: 4rem 1.5rem;
+    min-height: 50vh;
+  }
+
+  .brand-visual-section {
+    padding: 4rem 1.5rem;
+  }
+
+  .visual-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    padding: 2rem 1rem;
+  }
+
+  .logo-3d-container {
+    --cube-size: 170px;
+  }
+
+  .cta-button {
+    padding: 1rem 2rem;
+    font-size: 0.85rem;
+  }
+}
+
