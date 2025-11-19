@@ -23,7 +23,24 @@ const formatCurrency = (value: number, currency: string = 'usd') =>
     currency: currency.toUpperCase(),
   }).format(value / 100);
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:5000';
+const resolveApiBaseUrl = () => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  if (window.location.hostname === 'localhost') {
+    return 'http://127.0.0.1:5001/thform-33f71/us-central1/api';
+  }
+
+  // Production traffic stays same-origin and is proxied via Netlify redirects.
+  return '';
+};
+
+const buildApiUrl = (path: string) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const base = resolveApiBaseUrl();
+  return base ? `${base}${normalizedPath}` : normalizedPath;
+};
 
 const Shop: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<{ [key: number]: number }>({});
@@ -106,7 +123,7 @@ const Shop: React.FC = () => {
     setCheckoutError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/stripe/create-checkout-session`, {
+      const response = await fetch(buildApiUrl('/stripe/create-checkout-session'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
