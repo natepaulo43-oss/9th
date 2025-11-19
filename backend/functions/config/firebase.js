@@ -1,7 +1,5 @@
 import admin from 'firebase-admin';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { getSecretValue, firebasePrivateKey } from './secrets.js';
 
 const {
   FIREBASE_PROJECT_ID,
@@ -38,7 +36,11 @@ const resolvedStorageBucket =
   (resolvedProjectId ? `${resolvedProjectId}.appspot.com` : undefined);
 
 function buildAdminOptions() {
-  const resolvedPrivateKey = SERVICE_ACCOUNT_PRIVATE_KEY || FIREBASE_PRIVATE_KEY;
+  const resolvedPrivateKey =
+    getSecretValue(firebasePrivateKey, [
+      'SERVICE_ACCOUNT_PRIVATE_KEY',
+      'FIREBASE_PRIVATE_KEY',
+    ]) || SERVICE_ACCOUNT_PRIVATE_KEY || FIREBASE_PRIVATE_KEY;
   const hasServiceAccount = FIREBASE_PROJECT_ID && resolvedPrivateKey && FIREBASE_CLIENT_EMAIL;
 
   if (!hasServiceAccount) {

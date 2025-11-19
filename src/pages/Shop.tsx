@@ -23,14 +23,36 @@ const formatCurrency = (value: number, currency: string = 'usd') =>
     currency: currency.toUpperCase(),
   }).format(value / 100);
 
-const resolveCheckoutEndpoint = () => {
-  const isBrowser = typeof window !== 'undefined';
+const DEFAULT_LOCAL_STRIPE_ENDPOINT = 'http://localhost:5001/thform-33f71/us-central1/api/stripe';
+const DEFAULT_REMOTE_STRIPE_ENDPOINT = 'https://us-central1-thform-33f71.cloudfunctions.net/api/stripe';
 
-  if (isBrowser && window.location.hostname === 'localhost') {
-    return 'http://localhost:5001/thform-33f71/us-central1/api/stripe';
+const resolveCheckoutEndpoint = () => {
+  const envOverride = process.env.REACT_APP_STRIPE_ENDPOINT?.trim();
+  if (envOverride) {
+    return envOverride.replace(/\/$/, '');
   }
 
-  return '/stripe';
+  const isBrowser = typeof window !== 'undefined';
+  const useLocalFunctions =
+    isBrowser &&
+    window.location.hostname === 'localhost' &&
+    process.env.REACT_APP_USE_LOCAL_FUNCTIONS === 'true';
+
+  if (useLocalFunctions) {
+    const localOverride = process.env.REACT_APP_LOCAL_STRIPE_ENDPOINT?.trim();
+    return (localOverride || DEFAULT_LOCAL_STRIPE_ENDPOINT).replace(/\/$/, '');
+  }
+
+  // Prefer Netlify rewrite when explicitly requested, otherwise hit Cloud Function directly.
+  if (
+    isBrowser &&
+    process.env.REACT_APP_USE_NETLIFY_STRIPE_PROXY === 'true' &&
+    window.location.hostname !== 'localhost'
+  ) {
+    return '/stripe';
+  }
+
+  return DEFAULT_REMOTE_STRIPE_ENDPOINT;
 };
 
 const CHECKOUT_ENDPOINT = resolveCheckoutEndpoint();
