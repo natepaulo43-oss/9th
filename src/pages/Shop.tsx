@@ -23,21 +23,17 @@ const formatCurrency = (value: number, currency: string = 'usd') =>
     currency: currency.toUpperCase(),
   }).format(value / 100);
 
-const resolveApiBaseUrl = () => {
-  const envUrl = process.env.REACT_APP_API_BASE_URL?.trim();
-  if (envUrl) {
-    return envUrl.replace(/\/$/, '');
-  }
-
+const resolveCheckoutEndpoint = () => {
   const isBrowser = typeof window !== 'undefined';
+
   if (isBrowser && window.location.hostname === 'localhost') {
-    return 'http://localhost:5001/thform-33f71/us-central1/api';
+    return 'http://localhost:5001/thform-33f71/us-central1/api/stripe';
   }
 
-  return 'https://us-central1-thform-33f71.cloudfunctions.net/api';
+  return '/stripe';
 };
 
-const API_BASE_URL = resolveApiBaseUrl();
+const CHECKOUT_ENDPOINT = resolveCheckoutEndpoint();
 
 const Shop: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<Record<string, number>>({});
@@ -120,7 +116,7 @@ const Shop: React.FC = () => {
     setCheckoutError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/stripe/create-checkout-session`, {
+      const response = await fetch(`${CHECKOUT_ENDPOINT.replace(/\/$/, '')}/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
