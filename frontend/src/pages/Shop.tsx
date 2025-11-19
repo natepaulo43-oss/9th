@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import './Shop.css';
 
 interface Product {
-  id: string;
+  id: number;
   name: string;
   description: string;
   price: number; // stored in cents for currency-safe math
@@ -23,31 +23,17 @@ const formatCurrency = (value: number, currency: string = 'usd') =>
     currency: currency.toUpperCase(),
   }).format(value / 100);
 
-const resolveApiBaseUrl = () => {
-  const envUrl = process.env.REACT_APP_API_BASE_URL?.trim();
-  if (envUrl) {
-    return envUrl.replace(/\/$/, '');
-  }
-
-  const isBrowser = typeof window !== 'undefined';
-  if (isBrowser && window.location.hostname === 'localhost') {
-    return 'http://localhost:5001/thform-33f71/us-central1/api';
-  }
-
-  return 'https://us-central1-thform-33f71.cloudfunctions.net/api';
-};
-
-const API_BASE_URL = resolveApiBaseUrl();
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:5000';
 
 const Shop: React.FC = () => {
-  const [selectedImage, setSelectedImage] = useState<Record<string, number>>({});
+  const [selectedImage, setSelectedImage] = useState<{ [key: number]: number }>({});
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const products: Product[] = [
     {
-      id: 'prod_TRRTgFMRWW7OZS',
+      id: 1,
       name: 'Canvas 9thform Skate Hat',
       description: 'Premium canvas surf style hat with iconic 9thform skate logo. Designed for comfort and style. ',
       price: 3499,
@@ -60,7 +46,7 @@ const Shop: React.FC = () => {
       ],
     },
     {
-      id: 'prod_TRRUrKA3MQ9fay',
+      id: 2,
       name: 'Canvas 9thform Falling Guy Hat',
       description: 'Premium canvas surf hat with 9thform Falling Guy logo. Designed for comfort and style.',
       price: 3499,
@@ -94,11 +80,11 @@ const Shop: React.FC = () => {
     });
   };
 
-  const handleRemoveFromCart = (productId: string) => {
+  const handleRemoveFromCart = (productId: number) => {
     setCartItems((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = (productId: number, delta: number) => {
     setCartItems((prev) =>
       prev.map((item) =>
         item.product.id === productId
@@ -122,39 +108,29 @@ const Shop: React.FC = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/stripe/create-checkout-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           items: cartItems.map((item) => ({
             productId: item.product.id,
             quantity: item.quantity,
           })),
-          successUrl: `${window.location.origin}/thank-you`,
+          successUrl: `${window.location.origin}/shop?status=success`,
           cancelUrl: `${window.location.origin}/shop?status=cancelled`,
         }),
       });
 
       if (!response.ok) {
-        const raw = await response.text();
-        let derivedMessage = raw;
-
-        try {
-          const parsed = JSON.parse(raw);
-          derivedMessage = parsed?.error || parsed?.message || raw;
-        } catch (jsonError) {
-          // Non-JSON response, keep raw text
-        }
-
-        const fallbackMessage = `Checkout failed (${response.status})`;
-        throw new Error(derivedMessage?.trim() || fallbackMessage || 'Unable to start checkout.');
+        throw new Error('Unable to start checkout. Please try again.');
       }
 
-      const session = await response.json();
-
-      if (!session.url) {
-        throw new Error('Checkout session link was not returned.');
+      const data = await response.json();
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Checkout session was created but no URL was returned.');
       }
-
-      window.location.href = session.url;
     } catch (error) {
       console.error('Checkout error:', error);
       setCheckoutStatus('error');
