@@ -27,6 +27,25 @@ const DEFAULT_LOCAL_STRIPE_ENDPOINT = 'http://localhost:5001/thform-33f71/us-cen
 const DEFAULT_REMOTE_STRIPE_ENDPOINT = 'https://us-central1-thform-33f71.cloudfunctions.net/api/stripe';
 
 const resolveCheckoutEndpoint = () => {
+  const resolveApiBaseUrl = () => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+
+    if (window.location.hostname === 'localhost') {
+      return 'http://127.0.0.1:5001/thform-33f71/us-central1/api';
+    }
+
+    // Production requests stay same-origin and get proxied to Firebase via Netlify redirects.
+    return '';
+  };
+
+  const buildApiUrl = (path: string) => {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const base = resolveApiBaseUrl();
+    return base ? `${base}${normalizedPath}` : normalizedPath;
+  };
+
   const envOverride = process.env.REACT_APP_STRIPE_ENDPOINT?.trim();
   if (envOverride) {
     return envOverride.replace(/\/$/, '');
@@ -49,7 +68,7 @@ const resolveCheckoutEndpoint = () => {
     process.env.REACT_APP_USE_NETLIFY_STRIPE_PROXY === 'true' &&
     window.location.hostname !== 'localhost'
   ) {
-    return '/stripe';
+    return buildApiUrl('/stripe');
   }
 
   return DEFAULT_REMOTE_STRIPE_ENDPOINT;
