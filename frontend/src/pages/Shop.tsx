@@ -60,6 +60,7 @@ const Shop: React.FC = () => {
         '/images/skatecap.PNG',
         '/images/behind_hat.JPG',
         '/images/treehat.jpg',
+        '/images/IMG_2415.jpg',
       ],
     },
     {

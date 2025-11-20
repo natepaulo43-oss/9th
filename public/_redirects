@@ -1,3 +1,0 @@
-/stripe/* https://us-central1-thform-33f71.cloudfunctions.net/api/stripe/:splat 200
-/api/* https://us-central1-thform-33f71.cloudfunctions.net/api/:splat 200
-/*    /index.html   200
