@@ -61,6 +61,7 @@ const Shop: React.FC = () => {
         '/images/behind_hat.JPG',
         '/images/treehat.jpg',
         '/images/IMG_2415.jpg',
+        '/images/MAX05476.jpg',
       ],
     },
     {

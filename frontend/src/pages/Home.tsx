@@ -1,9 +1,19 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import './Home.css';
+
+declare global {
+  interface Window {
+    Sirv?: {
+      start: () => void;
+    };
+  }
+}
 
 const Home: React.FC = () => {
   const logoRef = useRef<HTMLDivElement>(null);
+  const sirvContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +26,32 @@ const Home: React.FC = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const scriptSrc = 'https://scripts.sirv.com/sirvjs/v3/sirv.js';
+    const triggerSirv = () => {
+      if (window.Sirv?.start && sirvContainerRef.current) {
+        window.Sirv.start();
+      }
+    };
+
+    const existingScript = document.querySelector(`script[src="${scriptSrc}"]`) as HTMLScriptElement | null;
+
+    if (existingScript) {
+      triggerSirv();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = scriptSrc;
+    script.async = true;
+    script.onload = triggerSirv;
+    document.body.appendChild(script);
+
+    return () => {
+      script.onload = null;
+    };
   }, []);
 
   return (
@@ -86,16 +122,16 @@ const Home: React.FC = () => {
           </motion.h1>
         </div>
 
-        <div style={{ marginTop: '5rem' }}>
-        <motion.div
-          className="scroll-indicator"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.8 }}
-        >
-          <div className="scroll-line"></div>
-          <span>Scroll</span>
-        </motion.div>
+        <div className="hero-scroll-indicator">
+          <motion.div
+            className="scroll-indicator"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5, duration: 0.8 }}
+          >
+            <div className="scroll-line"></div>
+            <span>Scroll</span>
+          </motion.div>
         </div>
       </section>
 
@@ -115,6 +151,12 @@ const Home: React.FC = () => {
           <Link to="/shop" className="cta-button">
             SHOP NOW
           </Link>
+          <div className="cta-sirv-wrapper" ref={sirvContainerRef}>
+            <div
+              className="Sirv"
+              data-src="https://nate1227.sirv.com/hat%20falling/hat%20no%20bcg/Hat%20360/Hat%20360.spin"
+            ></div>
+          </div>
         </div>
       </motion.section>
 
