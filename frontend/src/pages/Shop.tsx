@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import './Shop.css';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number; // stored in cents for currency-safe math
@@ -43,14 +43,14 @@ const buildApiUrl = (path: string) => {
 };
 
 const Shop: React.FC = () => {
-  const [selectedImage, setSelectedImage] = useState<{ [key: number]: number }>({});
+  const [selectedImage, setSelectedImage] = useState<Record<string, number>>({});
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const products: Product[] = [
     {
-      id: 1,
+      id: 'prod_TRRTgFMRWW7OZS',
       name: 'Canvas 9thform Skate Hat',
       description: 'Premium canvas surf style hat with iconic 9thform skate logo. Designed for comfort and style. ',
       price: 3499,
@@ -64,7 +64,7 @@ const Shop: React.FC = () => {
       ],
     },
     {
-      id: 2,
+      id: 'prod_TRRUrKA3MQ9fay',
       name: 'Canvas 9thform Falling Guy Hat',
       description: 'Premium canvas surf hat with 9thform Falling Guy logo. Designed for comfort and style.',
       price: 3499,
@@ -98,11 +98,11 @@ const Shop: React.FC = () => {
     });
   };
 
-  const handleRemoveFromCart = (productId: number) => {
+  const handleRemoveFromCart = (productId: string) => {
     setCartItems((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  const updateQuantity = (productId: number, delta: number) => {
+  const updateQuantity = (productId: string, delta: number) => {
     setCartItems((prev) =>
       prev.map((item) =>
         item.product.id === productId
