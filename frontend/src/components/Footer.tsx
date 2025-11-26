@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
 
   const socialLinks = [
     { name: 'Instagram', url: 'https://instagram.com/9thform', icon: 'fab fa-instagram' },
-    { name: 'Email', url: 'mailto:contact@9thform.com', icon: 'fas fa-envelope' },
+    { name: 'Email', url: 'mailto:hello@9thform.com,natepaulo43@gmail.com', icon: 'fas fa-envelope' },
     { name: 'Etsy', url: 'https://etsy.com/shop/9thform', icon: 'fab fa-etsy' },
   ];
 
@@ -30,17 +30,21 @@ const Footer: React.FC = () => {
             <div className="footer-section">
               <h4>Connect</h4>
               <div className="social-links">
-                {socialLinks.map((link) => (
-                  <a
-                    key={link.name}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={link.name}
-                  >
-                    <i className={link.icon}></i>
-                  </a>
-                ))}
+                {socialLinks.map((link) => {
+                  const isMailLink = link.url.startsWith('mailto:');
+
+                  return (
+                    <a
+                      key={link.name}
+                      href={link.url}
+                      target={isMailLink ? undefined : '_blank'}
+                      rel={isMailLink ? undefined : 'noopener noreferrer'}
+                      aria-label={link.name}
+                    >
+                      <i className={link.icon}></i>
+                    </a>
+                  );
+                })}
               </div>
             </div>
 
