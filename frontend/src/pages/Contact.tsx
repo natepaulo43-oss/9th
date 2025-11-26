@@ -20,6 +20,12 @@ const Contact: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const formName = 'contact';
+  const primaryEmail = 'hello@9thform.com';
+  const ccEmail = 'natepaulo43@gmail.com';
+  const emailLink = `mailto:${primaryEmail}?cc=${encodeURIComponent(ccEmail)}`;
+  const openMailClient = (url: string) => {
+    window.location.href = url;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -66,7 +72,7 @@ const Contact: React.FC = () => {
 
   const socialLinks = [
     { name: 'Instagram', url: 'https://instagram.com/9thform', icon: 'fab fa-instagram' },
-    { name: 'Email', url: 'mailto:hello@9thform.com,natepaulo43@gmail.com', icon: 'fas fa-envelope' },
+    { name: 'Email', url: emailLink, icon: 'fas fa-envelope' },
     { name: 'Etsy', url: 'https://etsy.com/shop/9thform', icon: 'fab fa-etsy' },
   ];
 
@@ -200,18 +206,28 @@ const Contact: React.FC = () => {
             </p>
 
             <div className="social-links">
-              {socialLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="social-link"
-                >
-                  <i className={link.icon}></i>
-                  <span>{link.name}</span>
-                </a>
-              ))}
+              {socialLinks.map((link) => {
+                const isMailLink = link.url.startsWith('mailto:');
+
+                return (
+                  <a
+                    key={link.name}
+                    href={link.url}
+                    target={isMailLink ? '_self' : '_blank'}
+                    rel={isMailLink ? undefined : 'noopener noreferrer'}
+                    className="social-link"
+                    onClick={(event) => {
+                      if (isMailLink) {
+                        event.preventDefault();
+                        openMailClient(link.url);
+                      }
+                    }}
+                  >
+                    <i className={link.icon}></i>
+                    <span>{link.name}</span>
+                  </a>
+                );
+              })}
             </div>
           </div>
         </motion.div>
