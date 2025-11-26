@@ -1,0 +1,112 @@
+:root {
+  --policies-bg: #030303;
+  --policies-card: rgba(255, 255, 255, 0.04);
+  --policies-border: rgba(255, 255, 255, 0.08);
+  --policies-primary: #f4f4f4;
+  --policies-muted: rgba(255, 255, 255, 0.6);
+  --policies-highlight: #c9ff43;
+}
+
+.policies-page {
+  min-height: 100vh;
+  padding: 7rem 1.5rem 5rem;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 45%),
+    var(--policies-bg);
+  color: var(--policies-primary);
+}
+
+.policies-hero {
+  max-width: 900px;
+  margin: 0 auto 4rem;
+  text-align: center;
+}
+
+.policies-hero h1 {
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  letter-spacing: 0.15em;
+  margin-bottom: 1.25rem;
+}
+
+.policies-tagline {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: 0.8rem;
+  color: var(--policies-muted);
+}
+
+.policies-description {
+  color: var(--policies-muted);
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.policies-content {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.policy-section {
+  padding: 2.5rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--policies-border);
+  background: var(--policies-card);
+  backdrop-filter: blur(16px);
+  scroll-margin-top: 120px;
+}
+
+.policy-header {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--policies-border);
+  padding-bottom: 1rem;
+}
+
+.policy-label {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--policies-muted);
+  font-size: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.policy-header h2 {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  letter-spacing: 0.08em;
+}
+
+.policy-paragraph {
+  color: var(--policies-muted);
+  line-height: 1.8;
+  font-size: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.policy-highlights {
+  margin: 1.5rem 0 0;
+  padding-left: 1.5rem;
+  color: var(--policies-primary);
+  display: grid;
+  gap: 0.8rem;
+}
+
+.policy-highlights li {
+  position: relative;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.policy-highlights li::marker {
+  color: var(--policies-highlight);
+}
+
+@media (max-width: 768px) {
+  .policies-page {
+    padding: 5rem 1rem 4rem;
+  }
+
+  .policy-section {
+    padding: 1.75rem;
+  }
+}

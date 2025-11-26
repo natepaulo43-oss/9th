@@ -7,6 +7,7 @@ import Shop from './pages/Shop';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import ThankYou from './pages/ThankYou';
+import Policies from './pages/Policies';
 
 function App() {
   return (
@@ -20,6 +21,9 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/thank-you" element={<ThankYou />} />
+            <Route path="/shipping" element={<Policies defaultSection="shipping" />} />
+            <Route path="/terms" element={<Policies defaultSection="terms" />} />
+            <Route path="/privacy" element={<Policies defaultSection="privacy" />} />
           </Routes>
         </main>
         <Footer />
