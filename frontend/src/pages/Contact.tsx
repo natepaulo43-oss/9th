@@ -66,7 +66,7 @@ const Contact: React.FC = () => {
 
   const socialLinks = [
     { name: 'Instagram', url: 'https://instagram.com/9thform', icon: 'fab fa-instagram' },
-    { name: 'Email', url: 'mailto: hello@9thform.com,natepaulo43@gmail.com', icon: 'fas fa-envelope' },
+    { name: 'Email', url: 'mailto:hello@9thform.com,natepaulo43@gmail.com', icon: 'fas fa-envelope' },
     { name: 'Etsy', url: 'https://etsy.com/shop/9thform', icon: 'fab fa-etsy' },
   ];
 
