@@ -15,7 +15,6 @@ const Footer: React.FC = () => {
     { path: '/privacy', label: 'Privacy Policy' },
     { path: '/terms', label: 'Terms of Service' },
     { path: '/shipping', label: 'Shipping Policy' },
-    { path: '/refund', label: 'Refund Policy' },
   ];
 
   return (
