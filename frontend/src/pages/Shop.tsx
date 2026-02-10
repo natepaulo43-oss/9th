@@ -135,7 +135,7 @@ const Shop: React.FC = () => {
             productId: item.product.id,
             quantity: item.quantity,
           })),
-          successUrl: `${window.location.origin}/shop?status=success`,
+          successUrl: `${window.location.origin}/thank-you`,
           cancelUrl: `${window.location.origin}/shop?status=cancelled`,
         }),
       });
