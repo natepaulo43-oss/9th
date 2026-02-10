@@ -52,7 +52,7 @@ const createStripeRouter = ({
       if (!stripe) {
         throw new Error('Stripe is not configured.');
       }
-      const { items = [], successUrl, cancelUrl } = req.body || {};
+      const { items = [], successUrl, cancelUrl, discountCode } = req.body || {};
 
       if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: 'Cart items are required.' });
@@ -104,6 +104,7 @@ const createStripeRouter = ({
           ),
         },
         automatic_tax: { enabled: true },
+        allow_promotion_codes: true,
       });
 
       res.json({ sessionId: session.id, url: session.url });
