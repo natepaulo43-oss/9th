@@ -96,7 +96,7 @@ const createStripeRouter = ({
         })),
         shipping_address_collection: { allowed_countries: ['US', 'CA'] },
         phone_number_collection: { enabled: true },
-        success_url: successUrl || `${frontendUrl}/shop?status=success`,
+        success_url: successUrl || `${frontendUrl}/thank-you`,
         cancel_url: cancelUrl || `${frontendUrl}/shop?status=cancelled`,
         metadata: {
           cart: JSON.stringify(
