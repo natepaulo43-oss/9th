@@ -29,7 +29,7 @@ const resolveApiBaseUrl = () => {
   }
 
   if (window.location.hostname === 'localhost') {
-    return 'http://127.0.0.1:5001/thform-33f71/us-central1/api';
+    return process.env.REACT_APP_API_URL || 'http://localhost:5000';
   }
 
   // Production traffic stays same-origin and is proxied via Netlify redirects.

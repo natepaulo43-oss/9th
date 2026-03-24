@@ -13,6 +13,12 @@ const {
   SERVICE_ACCOUNT_PRIVATE_KEY,
 } = process.env;
 
+// Set project ID for local development
+if (FIREBASE_PROJECT_ID) {
+  process.env.GCLOUD_PROJECT = FIREBASE_PROJECT_ID;
+  process.env.GOOGLE_CLOUD_PROJECT = FIREBASE_PROJECT_ID;
+}
+
 function getFirebaseConfig() {
   if (!FIREBASE_CONFIG) {
     return {};
@@ -44,6 +50,7 @@ function buildAdminOptions() {
   const hasServiceAccount = FIREBASE_PROJECT_ID && resolvedPrivateKey && FIREBASE_CLIENT_EMAIL;
 
   if (!hasServiceAccount) {
+    console.warn('Using default credentials - some features may not work');
     return {
       projectId: resolvedProjectId,
       databaseURL: resolvedDatabaseUrl,
@@ -54,9 +61,10 @@ function buildAdminOptions() {
   return {
     credential: admin.credential.cert({
       projectId: FIREBASE_PROJECT_ID,
-      privateKey: resolvedPrivateKey?.replace(/\n/g, '\n'),
+      privateKey: resolvedPrivateKey?.replace(/\\n/g, '\n'),
       clientEmail: FIREBASE_CLIENT_EMAIL,
     }),
+    projectId: FIREBASE_PROJECT_ID,
     databaseURL: resolvedDatabaseUrl,
     storageBucket: resolvedStorageBucket,
   };
@@ -67,11 +75,13 @@ function initializeFirebaseAdmin() {
     admin.initializeApp(buildAdminOptions());
   }
 
+  const storageBucket = resolvedStorageBucket || `${resolvedProjectId}.appspot.com`;
+
   return {
     admin,
     db: admin.firestore(),
     auth: admin.auth(),
-    storage: admin.storage().bucket(),
+    storage: storageBucket ? admin.storage().bucket(storageBucket) : null,
   };
 }
 

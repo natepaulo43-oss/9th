@@ -1,5 +1,6 @@
 import express from 'express';
 import Stripe from 'stripe';
+import { createOrder } from '../services/orderService.js';
 
 const DEFAULT_FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const DEFAULT_ASSET_BASE_URL = process.env.ASSET_BASE_URL || DEFAULT_FRONTEND_URL;
@@ -145,6 +146,33 @@ const createStripeRouter = ({
       case 'checkout.session.completed': {
         const session = event.data.object;
         console.log('Payment successful:', session.id);
+
+        // Save order to Firestore
+        try {
+          const orderData = {
+            stripeSessionId: session.id,
+            stripePaymentIntentId: session.payment_intent,
+            customerEmail: session.customer_details?.email || '',
+            customerName: session.customer_details?.name || '',
+            customerPhone: session.customer_details?.phone || '',
+            shippingAddress: session.shipping_details?.address || session.customer_details?.address || {},
+            shippingName: session.shipping_details?.name || session.customer_details?.name || '',
+            amountTotal: session.amount_total,
+            amountSubtotal: session.amount_subtotal,
+            currency: session.currency,
+            items: JSON.parse(session.metadata?.cart || '[]'),
+            paymentStatus: session.payment_status,
+          };
+
+          const result = await createOrder(orderData);
+          if (result.success) {
+            console.log('Order saved to Firestore:', result.data.id);
+          } else {
+            console.error('Failed to save order to Firestore:', result.error);
+          }
+        } catch (error) {
+          console.error('Error processing order:', error);
+        }
         break;
       }
 

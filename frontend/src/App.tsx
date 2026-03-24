@@ -8,6 +8,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import ThankYou from './pages/ThankYou';
 import Policies from './pages/Policies';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/shipping" element={<Policies defaultSection="shipping" />} />
             <Route path="/terms" element={<Policies defaultSection="terms" />} />
             <Route path="/privacy" element={<Policies defaultSection="privacy" />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </main>
         <Footer />

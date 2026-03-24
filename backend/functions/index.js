@@ -6,6 +6,7 @@ import { onRequest } from 'firebase-functions/v2/https';
 import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
 import createStripeRouter from './routes/stripe.js';
+import ordersRoutes from './routes/orders.js';
 import {
   getSecretValue,
   firebasePrivateKey,
@@ -36,6 +37,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);
 app.use('/stripe', (req, res, next) => getStripeRouter()(req, res, next));
+app.use('/orders', ordersRoutes);
 
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Firebase Backend API' });
