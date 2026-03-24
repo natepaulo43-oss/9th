@@ -50,6 +50,10 @@ const AdminDashboard: React.FC = () => {
 
   const getAuthToken = useCallback(async (): Promise<string | null> => {
     try {
+      if (!auth) {
+        setAuthError('Firebase authentication is not configured');
+        return null;
+      }
       const user = auth.currentUser;
       if (!user) {
         setAuthError('Not authenticated');
@@ -66,7 +70,9 @@ const AdminDashboard: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      if (auth) {
+        await signOut(auth);
+      }
       navigate('/admin/login');
     } catch (error) {
       console.error('Logout error:', error);

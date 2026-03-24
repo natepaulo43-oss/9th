@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { auth, isFirebaseEnabled } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -15,6 +15,12 @@ const AdminLogin: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (!isFirebaseEnabled || !auth) {
+      setError('Firebase authentication is not configured. Please contact the administrator.');
+      setLoading(false);
+      return;
+    }
 
     try {
       await signInWithEmailAndPassword(auth, email, password);

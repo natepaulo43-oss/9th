@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { auth, isFirebaseEnabled } from '../config/firebase';
 import styled from 'styled-components';
 
 interface ProtectedRouteProps {
@@ -13,6 +13,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isFirebaseEnabled || !auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
