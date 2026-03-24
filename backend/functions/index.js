@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { onRequest } from 'firebase-functions/v2/https';
+import { defineString } from 'firebase-functions/params';
 import { securityHeaders } from './middleware/securityHeaders.js';
 import { standardRateLimiter } from './middleware/rateLimiter.js';
 
@@ -16,6 +17,9 @@ import {
   stripeWebhookSecret,
 } from './config/secrets.js';
 
+const frontendUrl = defineString('FRONTEND_URL', { default: 'https://9thform.com' });
+const assetBaseUrl = defineString('ASSET_BASE_URL', { default: 'https://9thform.com' });
+
 const app = express();
 let stripeRouter;
 
@@ -24,8 +28,8 @@ const getStripeRouter = () => {
     stripeRouter = createStripeRouter({
       stripeSecretKey: getSecretValue(stripeSecretKey, 'STRIPE_SECRET_KEY'),
       stripeWebhookSecret: getSecretValue(stripeWebhookSecret, 'STRIPE_WEBHOOK_SECRET'),
-      frontendUrl: process.env.FRONTEND_URL,
-      assetBaseUrl: process.env.ASSET_BASE_URL,
+      frontendUrl: frontendUrl.value(),
+      assetBaseUrl: assetBaseUrl.value(),
     });
   }
   return stripeRouter;
