@@ -151,14 +151,19 @@ const Home: React.FC = () => {
           <Link to="/shop" className="cta-button">
             SHOP NOW
           </Link>
-          <div className="cta-sirv-wrapper" ref={sirvContainerRef}>
-            <div
-              className="Sirv"
-              data-src="https://nate1227.sirv.com/hat%20falling/hat%20no%20bcg/Hat%20360/Hat%20360.spin"
-            ></div>
-          </div>
         </div>
       </motion.section>
+
+      {/* Sirv 360 Viewer Section */}
+      <section className="home-placeholder-section">
+        <div className="home-placeholder" ref={sirvContainerRef}>
+          <div
+            className="Sirv"
+            data-src="https://nate1227.sirv.com/hat%20falling/hat%20no%20bcg/Hat%20360/Hat%20360.spin"
+            data-options="autoplay.enabled:true;autoplay.once:false;autoplay.speed:3"
+          ></div>
+        </div>
+      </section>
 
       {/* Brand Visual Section */}
       <section className="brand-visual-section">
