@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { onRequest } from 'firebase-functions/v2/https';
+import { securityHeaders } from './middleware/securityHeaders.js';
+import { standardRateLimiter } from './middleware/rateLimiter.js';
 
 import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
@@ -29,10 +31,12 @@ const getStripeRouter = () => {
   return stripeRouter;
 };
 
+app.use(securityHeaders);
 app.use(cors({ origin: true, credentials: true }));
 app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '1mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }));
+app.use(standardRateLimiter);
 
 app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);

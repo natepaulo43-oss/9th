@@ -1,6 +1,8 @@
 import express from 'express';
 import Stripe from 'stripe';
 import { createOrder } from '../services/orderService.js';
+import { strictRateLimiter } from '../middleware/rateLimiter.js';
+import { validateCheckoutSession } from '../middleware/validation.js';
 
 const DEFAULT_FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const DEFAULT_ASSET_BASE_URL = process.env.ASSET_BASE_URL || DEFAULT_FRONTEND_URL;
@@ -48,7 +50,7 @@ const createStripeRouter = ({
   const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
   // Create checkout session
-  router.post('/create-checkout-session', async (req, res) => {
+  router.post('/create-checkout-session', strictRateLimiter, validateCheckoutSession, async (req, res) => {
     try {
       if (!stripe) {
         throw new Error('Stripe is not configured.');

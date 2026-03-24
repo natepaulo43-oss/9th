@@ -7,10 +7,21 @@ import {
   markOrderFulfilled,
   getOrderStats,
 } from '../services/orderService.js';
+import { verifyToken } from '../middleware/auth.js';
+import { lenientRateLimiter } from '../middleware/rateLimiter.js';
+import {
+  validateOrderId,
+  validateOrderUpdate,
+  validateOrderQuery,
+} from '../middleware/validation.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+// All order routes require authentication
+router.use(verifyToken);
+router.use(lenientRateLimiter);
+
+router.get('/', validateOrderQuery, async (req, res) => {
   try {
     const { status, apliqStatus, limit, startAfter } = req.query;
     
@@ -47,7 +58,7 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-router.get('/:orderId', async (req, res) => {
+router.get('/:orderId', validateOrderId, async (req, res) => {
   try {
     const { orderId } = req.params;
     const result = await getOrder(orderId);
@@ -63,7 +74,7 @@ router.get('/:orderId', async (req, res) => {
   }
 });
 
-router.patch('/:orderId', async (req, res) => {
+router.patch('/:orderId', validateOrderId, validateOrderUpdate, async (req, res) => {
   try {
     const { orderId } = req.params;
     const updates = req.body;
@@ -81,7 +92,7 @@ router.patch('/:orderId', async (req, res) => {
   }
 });
 
-router.post('/:orderId/submit-to-apliiq', async (req, res) => {
+router.post('/:orderId/submit-to-apliiq', validateOrderId, async (req, res) => {
   try {
     const { orderId } = req.params;
     const { apliqOrderId } = req.body;
@@ -99,7 +110,7 @@ router.post('/:orderId/submit-to-apliiq', async (req, res) => {
   }
 });
 
-router.post('/:orderId/fulfill', async (req, res) => {
+router.post('/:orderId/fulfill', validateOrderId, async (req, res) => {
   try {
     const { orderId } = req.params;
     const { trackingNumber } = req.body;
