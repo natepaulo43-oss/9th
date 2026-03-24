@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { createOrder } from '../services/orderService.js';
 import { strictRateLimiter } from '../middleware/rateLimiter.js';
 import { validateCheckoutSession } from '../middleware/validation.js';
+import { db } from '../config/firebase.js';
 
 const DEFAULT_FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const DEFAULT_ASSET_BASE_URL = process.env.ASSET_BASE_URL || DEFAULT_FRONTEND_URL;
@@ -99,7 +100,7 @@ const createStripeRouter = ({
         })),
         shipping_address_collection: { allowed_countries: ['US', 'CA'] },
         phone_number_collection: { enabled: true },
-        success_url: successUrl || `${frontendUrl}/thank-you`,
+        success_url: successUrl || `${frontendUrl}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: cancelUrl || `${frontendUrl}/shop?status=cancelled`,
         metadata: {
           cart: JSON.stringify(
@@ -113,6 +114,70 @@ const createStripeRouter = ({
       res.json({ sessionId: session.id, url: session.url });
     } catch (error) {
       console.error('Stripe checkout error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Endpoint to verify session and create order (fallback for when webhook doesn't trigger)
+  router.post('/verify-session', strictRateLimiter, async (req, res) => {
+    try {
+      if (!stripe) {
+        throw new Error('Stripe is not configured.');
+      }
+
+      const { sessionId } = req.body;
+      if (!sessionId) {
+        return res.status(400).json({ error: 'Session ID is required' });
+      }
+
+      // Retrieve the session from Stripe
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      // Check if payment was successful
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ error: 'Payment not completed' });
+      }
+
+      // Check if order already exists for this session
+      const existingOrders = await db.collection('orders')
+        .where('stripeSessionId', '==', session.id)
+        .limit(1)
+        .get();
+
+      if (!existingOrders.empty) {
+        return res.json({ 
+          success: true, 
+          message: 'Order already exists',
+          orderId: existingOrders.docs[0].id 
+        });
+      }
+
+      // Create the order
+      const orderData = {
+        stripeSessionId: session.id,
+        stripePaymentIntentId: session.payment_intent,
+        customerEmail: session.customer_details?.email || '',
+        customerName: session.customer_details?.name || '',
+        customerPhone: session.customer_details?.phone || '',
+        shippingAddress: session.shipping_details?.address || session.customer_details?.address || {},
+        shippingName: session.shipping_details?.name || session.customer_details?.name || '',
+        amountTotal: session.amount_total,
+        amountSubtotal: session.amount_subtotal,
+        currency: session.currency,
+        items: JSON.parse(session.metadata?.cart || '[]'),
+        paymentStatus: session.payment_status,
+      };
+
+      const result = await createOrder(orderData);
+      if (result.success) {
+        console.log('Order created via verify-session:', result.data.id);
+        return res.json({ success: true, orderId: result.data.id });
+      } else {
+        console.error('Failed to create order:', result.error);
+        return res.status(500).json({ error: result.error });
+      }
+    } catch (error) {
+      console.error('Error verifying session:', error);
       res.status(500).json({ error: error.message });
     }
   });
