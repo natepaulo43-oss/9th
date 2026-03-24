@@ -3,7 +3,24 @@ import { motion } from 'framer-motion';
 import './ThankYou.css';
 import { Link, useSearchParams } from 'react-router-dom';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const resolveApiBaseUrl = () => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  if (window.location.hostname === 'localhost') {
+    return process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  }
+
+  // Production traffic stays same-origin and is proxied via Netlify redirects.
+  return '';
+};
+
+const buildApiUrl = (path: string) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const base = resolveApiBaseUrl();
+  return base ? `${base}${normalizedPath}` : normalizedPath;
+};
 
 const ThankYou: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -20,7 +37,7 @@ const ThankYou: React.FC = () => {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/stripe/verify-session`, {
+        const response = await fetch(buildApiUrl('/stripe/verify-session'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

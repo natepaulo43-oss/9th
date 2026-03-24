@@ -4,7 +4,24 @@ import { auth } from '../config/firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const resolveApiBaseUrl = () => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  if (window.location.hostname === 'localhost') {
+    return process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  }
+
+  // Production traffic stays same-origin and is proxied via Netlify redirects.
+  return '';
+};
+
+const buildApiUrl = (path: string) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const base = resolveApiBaseUrl();
+  return base ? `${base}${normalizedPath}` : normalizedPath;
+};
 
 interface Order {
   id: string;
@@ -91,7 +108,7 @@ const AdminDashboard: React.FC = () => {
         params.append('apliqStatus', filter);
       }
       
-      const response = await fetch(`${API_BASE_URL}/orders?${params}`, {
+      const response = await fetch(buildApiUrl(`/orders?${params}`), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -117,7 +134,7 @@ const AdminDashboard: React.FC = () => {
       const token = await getAuthToken();
       if (!token) return;
 
-      const response = await fetch(`${API_BASE_URL}/orders/stats`, {
+      const response = await fetch(buildApiUrl('/orders/stats'), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -146,7 +163,7 @@ const AdminDashboard: React.FC = () => {
       const token = await getAuthToken();
       if (!token) return;
 
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/submit-to-apliiq`, {
+      const response = await fetch(buildApiUrl(`/orders/${orderId}/submit-to-apliiq`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +192,7 @@ const AdminDashboard: React.FC = () => {
       const token = await getAuthToken();
       if (!token) return;
 
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/fulfill`, {
+      const response = await fetch(buildApiUrl(`/orders/${orderId}/fulfill`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
