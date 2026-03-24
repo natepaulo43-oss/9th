@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "9thform-website": "file:.."
+  }
+}
