@@ -9,6 +9,8 @@ import Contact from './pages/Contact';
 import ThankYou from './pages/ThankYou';
 import Policies from './pages/Policies';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminLogin from './pages/AdminLogin';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -25,7 +27,9 @@ function App() {
             <Route path="/shipping" element={<Policies defaultSection="shipping" />} />
             <Route path="/terms" element={<Policies defaultSection="terms" />} />
             <Route path="/privacy" element={<Policies defaultSection="privacy" />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           </Routes>
         </main>
         <Footer />

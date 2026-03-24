@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
+import { auth } from '../config/firebase';
+import { signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -42,16 +45,58 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'not_submitted' | 'submitted' | 'fulfilled'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const getAuthToken = async (): Promise<string | null> => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        setAuthError('Not authenticated');
+        navigate('/admin/login');
+        return null;
+      }
+      return await user.getIdToken();
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      setAuthError('Authentication error');
+      return null;
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
+      setAuthError(null);
+      const token = await getAuthToken();
+      if (!token) return;
+
       const params = new URLSearchParams();
       if (filter !== 'all') {
         params.append('apliqStatus', filter);
       }
       
-      const response = await fetch(`${API_BASE_URL}/orders?${params}`);
+      const response = await fetch(`${API_BASE_URL}/orders?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        setAuthError('Session expired. Please login again.');
+        navigate('/admin/login');
+        return;
+      }
+
       const data = await response.json();
       setOrders(data.orders || []);
     } catch (error) {
@@ -59,17 +104,31 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, navigate]);
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/orders/stats`);
+      const token = await getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/orders/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        setAuthError('Session expired. Please login again.');
+        navigate('/admin/login');
+        return;
+      }
+
       const data = await response.json();
       setStats(data);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     fetchOrders();
@@ -78,11 +137,24 @@ const AdminDashboard: React.FC = () => {
 
   const markAsSubmitted = async (orderId: string, apliqOrderId?: string) => {
     try {
-      await fetch(`${API_BASE_URL}/orders/${orderId}/submit-to-apliiq`, {
+      const token = await getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/submit-to-apliiq`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ apliqOrderId }),
       });
+
+      if (response.status === 401) {
+        setAuthError('Session expired. Please login again.');
+        navigate('/admin/login');
+        return;
+      }
+
       fetchOrders();
       fetchStats();
       alert('Order marked as submitted to Apliiq!');
@@ -94,11 +166,24 @@ const AdminDashboard: React.FC = () => {
 
   const markAsFulfilled = async (orderId: string, trackingNumber?: string) => {
     try {
-      await fetch(`${API_BASE_URL}/orders/${orderId}/fulfill`, {
+      const token = await getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/fulfill`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ trackingNumber }),
       });
+
+      if (response.status === 401) {
+        setAuthError('Session expired. Please login again.');
+        navigate('/admin/login');
+        return;
+      }
+
       fetchOrders();
       fetchStats();
       alert('Order marked as fulfilled!');
@@ -147,8 +232,14 @@ const AdminDashboard: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>Order Management Dashboard</Title>
-        <Subtitle>Apliiq Fulfillment Integration</Subtitle>
+        <HeaderTop>
+          <div>
+            <Title>Order Management Dashboard</Title>
+            <Subtitle>Apliiq Fulfillment Integration</Subtitle>
+          </div>
+          <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
+        </HeaderTop>
+        {authError && <ErrorBanner>{authError}</ErrorBanner>}
       </Header>
 
       {stats && (
@@ -343,6 +434,39 @@ const Container = styled.div`
 
 const Header = styled.div`
   margin-bottom: 40px;
+`;
+
+const HeaderTop = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const LogoutButton = styled.button`
+  padding: 10px 20px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #ff5252;
+  }
+`;
+
+const ErrorBanner = styled.div`
+  padding: 12px 16px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #c33;
+  font-size: 14px;
+  margin-top: 12px;
 `;
 
 const Title = styled.h1`
