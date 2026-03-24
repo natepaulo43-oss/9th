@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -43,12 +43,7 @@ const AdminDashboard: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'not_submitted' | 'submitted' | 'fulfilled'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-    fetchStats();
-  }, [filter]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -64,9 +59,9 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/orders/stats`);
       const data = await response.json();
@@ -74,7 +69,12 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchStats();
+  }, [fetchOrders, fetchStats]);
 
   const markAsSubmitted = async (orderId: string, apliqOrderId?: string) => {
     try {
