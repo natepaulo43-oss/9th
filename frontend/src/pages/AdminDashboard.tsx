@@ -48,7 +48,7 @@ const AdminDashboard: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const getAuthToken = async (): Promise<string | null> => {
+  const getAuthToken = useCallback(async (): Promise<string | null> => {
     try {
       const user = auth.currentUser;
       if (!user) {
@@ -62,7 +62,7 @@ const AdminDashboard: React.FC = () => {
       setAuthError('Authentication error');
       return null;
     }
-  };
+  }, [navigate]);
 
   const handleLogout = async () => {
     try {
@@ -104,7 +104,7 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filter, navigate]);
+  }, [filter, navigate, getAuthToken]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -128,7 +128,7 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  }, [navigate]);
+  }, [navigate, getAuthToken]);
 
   useEffect(() => {
     fetchOrders();
