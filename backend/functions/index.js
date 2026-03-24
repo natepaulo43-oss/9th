@@ -21,19 +21,7 @@ const frontendUrl = defineString('FRONTEND_URL', { default: 'https://9thform.com
 const assetBaseUrl = defineString('ASSET_BASE_URL', { default: 'https://9thform.com' });
 
 const app = express();
-let stripeRouter;
-
-const getStripeRouter = () => {
-  if (!stripeRouter) {
-    stripeRouter = createStripeRouter({
-      stripeSecretKey: getSecretValue(stripeSecretKey, 'STRIPE_SECRET_KEY'),
-      stripeWebhookSecret: getSecretValue(stripeWebhookSecret, 'STRIPE_WEBHOOK_SECRET'),
-      frontendUrl: frontendUrl.value(),
-      assetBaseUrl: assetBaseUrl.value(),
-    });
-  }
-  return stripeRouter;
-};
+let stripeRouter = null;
 
 app.use(securityHeaders);
 app.use(cors({ origin: true, credentials: true }));
@@ -44,7 +32,18 @@ app.use(standardRateLimiter);
 
 app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);
-app.use('/stripe', (req, res, next) => getStripeRouter()(req, res, next));
+app.use('/stripe', (req, res, next) => {
+  // Lazy initialize stripe router on first request (runtime, not deployment time)
+  if (!stripeRouter) {
+    stripeRouter = createStripeRouter({
+      stripeSecretKey: getSecretValue(stripeSecretKey, 'STRIPE_SECRET_KEY'),
+      stripeWebhookSecret: getSecretValue(stripeWebhookSecret, 'STRIPE_WEBHOOK_SECRET'),
+      frontendUrl: frontendUrl.value(),
+      assetBaseUrl: assetBaseUrl.value(),
+    });
+  }
+  stripeRouter(req, res, next);
+});
 app.use('/orders', ordersRoutes);
 
 app.get('/', (req, res) => {
