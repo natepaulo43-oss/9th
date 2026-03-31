@@ -302,6 +302,12 @@
   transition: transform 0.5s ease;
 }
 
+.shop-page .product-image.size-chart-image {
+  width: 100%;
+  min-width: unset;
+  object-fit: contain;
+}
+
 .product-card:hover .product-image {
   transform: none;
 }
