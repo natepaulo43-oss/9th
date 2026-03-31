@@ -21,7 +21,7 @@ const sections: {
       'Pre-Orders will all be shipped out on the dropdate.',
     ],
     highlights: [
-      'Free Shipping. All the time.',
+      'Flat rate shipping of $3.99 on all orders.',
       'Customers are responsible for any import duties or taxes assessed by their country.',
     ],
   },
