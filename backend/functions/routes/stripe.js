@@ -27,6 +27,15 @@ const productCatalog = new Map([
       image: '/images/aspect_white.png',
     },
   ],
+  [
+    'prod_UFcE8PRgn7qBzR',
+    {
+      name: 'Phased Motion Tee',
+      price: 3199,
+      currency: 'usd',
+      image: '/images/shirt mockup.jpg',
+    },
+  ],
 ]);
 
 const toAbsoluteImageUrl = (imagePath, baseUrl = DEFAULT_ASSET_BASE_URL) => {
@@ -99,6 +108,11 @@ const createStripeRouter = ({
           quantity,
         })),
         shipping_address_collection: { allowed_countries: ['US', 'CA'] },
+        shipping_options: [
+          {
+            shipping_rate: 'shr_1TH7HKGxmarJfmGor8SAJggv',
+          },
+        ],
         phone_number_collection: { enabled: true },
         success_url: successUrl || `${frontendUrl}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: cancelUrl || `${frontendUrl}/shop?status=cancelled`,
