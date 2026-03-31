@@ -80,30 +80,62 @@ const Container = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 50%),
+    linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
   padding: 20px;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"%3E%3Crect width="120" height="120" fill="%23000000"/%3E%3Cpath d="M0 0h1v1H0z" fill="%23ffffff" opacity="0.03"/%3E%3C/svg%3E');
+    opacity: 0.4;
+    pointer-events: none;
+  }
 `;
 
 const LoginCard = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(25px);
   padding: 48px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 60%);
+    opacity: 0.8;
+    pointer-events: none;
+  }
+  
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
 `;
 
 const Title = styled.h1`
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 28px;
-  font-weight: bold;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   margin: 0 0 8px 0;
-  color: #000;
+  color: #ffffff;
   text-align: center;
 `;
 
 const Subtitle = styled.p`
   font-size: 14px;
-  color: #666;
+  color: #888888;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   margin: 0 0 32px 0;
   text-align: center;
 `;
@@ -121,57 +153,86 @@ const InputGroup = styled.div`
 `;
 
 const Label = styled.label`
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
 `;
 
 const Input = styled.input`
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
   font-size: 15px;
-  transition: border-color 0.2s;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  &::placeholder {
+    color: #888888;
   }
 
   &:disabled {
-    background: #f5f5f5;
+    background: rgba(255, 255, 255, 0.02);
+    opacity: 0.5;
     cursor: not-allowed;
   }
 `;
 
 const LoginButton = styled.button`
   padding: 14px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 16px;
   font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+  background: #ffffff;
+  border: 2px solid #ffffff;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
   margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    transition: left 0.3s ease;
+    z-index: -1;
+  }
 
   &:hover:not(:disabled) {
-    background: #5568d3;
+    color: #ffffff;
+  }
+  
+  &:hover:not(:disabled)::before {
+    left: 0;
   }
 
   &:disabled {
-    background: #ccc;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 `;
 
 const ErrorMessage = styled.div`
   padding: 12px;
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 6px;
-  color: #c33;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
   font-size: 14px;
 `;
 

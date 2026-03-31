@@ -449,14 +449,27 @@ const AdminDashboard: React.FC = () => {
 };
 
 const Container = styled.div`
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 50%),
+    linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+  padding: 120px 20px 40px;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"%3E%3Crect width="120" height="120" fill="%23000000"/%3E%3Cpath d="M0 0h1v1H0z" fill="%23ffffff" opacity="0.03"/%3E%3C/svg%3E');
+    opacity: 0.4;
+    pointer-events: none;
+  }
 `;
 
 const Header = styled.div`
-  margin-bottom: 40px;
+  max-width: 1400px;
+  margin: 0 auto 40px;
+  position: relative;
+  z-index: 1;
 `;
 
 const HeaderTop = styled.div`
@@ -464,137 +477,209 @@ const HeaderTop = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(25px);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 60%);
+    opacity: 0.8;
+    pointer-events: none;
+  }
+  
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
 `;
 
 const LogoutButton = styled.button`
   padding: 10px 20px;
-  background: #ff6b6b;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
 
   &:hover {
-    background: #ff5252;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
   }
 `;
 
 const ErrorBanner = styled.div`
   padding: 12px 16px;
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 6px;
-  color: #c33;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
   font-size: 14px;
   margin-top: 12px;
 `;
 
 const Title = styled.h1`
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 32px;
-  font-weight: bold;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   margin: 0 0 8px 0;
-  color: #000;
+  color: #ffffff;
 `;
 
 const Subtitle = styled.p`
   font-size: 16px;
-  color: #666;
+  color: #888888;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   margin: 0;
 `;
 
 const StatsGrid = styled.div`
+  max-width: 1400px;
+  margin: 0 auto 40px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
-  margin-bottom: 40px;
+  position: relative;
+  z-index: 1;
 `;
 
 const StatCard = styled.div<{ color?: string }>`
-  background: ${(props) => props.color || '#f8f9fa'};
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(25px);
   padding: 24px;
-  border-radius: 8px;
   text-align: center;
-  ${(props) => props.color && 'color: white;'}
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: ${(props) => props.color ? `linear-gradient(135deg, ${props.color}33, transparent 60%)` : 'linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 60%)'};
+    opacity: 0.8;
+    pointer-events: none;
+  }
+  
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
 `;
 
 const StatLabel = styled.div`
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   margin-bottom: 8px;
-  opacity: 0.9;
+  color: #888888;
 `;
 
 const StatValue = styled.div`
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 36px;
-  font-weight: bold;
+  font-weight: 700;
+  color: #ffffff;
 `;
 
 const FilterBar = styled.div`
+  max-width: 1400px;
+  margin: 0 auto 24px;
   display: flex;
   gap: 12px;
-  margin-bottom: 24px;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 `;
 
 const FilterButton = styled.button<{ active: boolean }>`
   padding: 10px 20px;
-  border: 2px solid ${(props) => (props.active ? '#000' : '#ddd')};
-  background: ${(props) => (props.active ? '#000' : '#fff')};
-  color: ${(props) => (props.active ? '#fff' : '#000')};
-  border-radius: 6px;
-  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  transition: all 0.2s;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid ${(props) => (props.active ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.2)')};
+  background: ${(props) => (props.active ? 'rgba(255, 255, 255, 0.1)' : 'transparent')};
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
 
   &:hover {
-    border-color: #000;
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.1);
   }
 `;
 
 const OrdersTable = styled.table`
+  max-width: 1400px;
+  margin: 0 auto;
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(25px);
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
 
   th {
-    background: #f8f9fa;
+    font-family: 'Space Grotesk', sans-serif;
+    background: rgba(255, 255, 255, 0.02);
     padding: 16px;
     text-align: left;
     font-weight: 600;
     font-size: 14px;
-    color: #495057;
-    border-bottom: 2px solid #dee2e6;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #888888;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   td {
     padding: 16px;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     font-size: 14px;
+    color: #ffffff;
+  }
+  
+  td small {
+    color: #888888;
   }
 
   tr:last-child td {
     border-bottom: none;
   }
 
-  tr:hover {
-    background: #f8f9fa;
+  tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
   }
 `;
 
 const StatusBadge = styled.span<{ color: string }>`
   display: inline-block;
   padding: 4px 12px;
-  background: ${(props) => props.color};
-  color: white;
-  border-radius: 12px;
+  background: ${(props) => `${props.color}33`};
+  border: 1px solid ${(props) => `${props.color}66`};
+  color: ${(props) => props.color};
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 `;
 
 const ActionButtons = styled.div`
@@ -605,45 +690,72 @@ const ActionButtons = styled.div`
 
 const Button = styled.button`
   padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 13px;
   font-weight: 600;
-  transition: opacity 0.2s;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
 
   &:hover {
-    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
   }
 `;
 
 const ViewButton = styled(Button)`
-  background: #868e96;
-  color: white;
+  background: transparent;
+  color: #ffffff;
 `;
 
 const SubmitButton = styled(Button)`
-  background: #ffa500;
-  color: white;
+  background: rgba(255, 165, 0, 0.2);
+  border-color: #ffa500;
+  color: #ffa500;
+  
+  &:hover {
+    background: rgba(255, 165, 0, 0.3);
+    border-color: #ffa500;
+  }
 `;
 
 const FulfillButton = styled(Button)`
-  background: #51cf66;
-  color: white;
+  background: rgba(81, 207, 102, 0.2);
+  border-color: #51cf66;
+  color: #51cf66;
+  
+  &:hover {
+    background: rgba(81, 207, 102, 0.3);
+    border-color: #51cf66;
+  }
 `;
 
 const LoadingMessage = styled.div`
+  max-width: 1400px;
+  margin: 0 auto;
   text-align: center;
   padding: 60px;
   font-size: 18px;
-  color: #666;
+  color: #888888;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 `;
 
 const EmptyMessage = styled.div`
+  max-width: 1400px;
+  margin: 0 auto;
   text-align: center;
   padding: 60px;
   font-size: 18px;
-  color: #666;
+  color: #888888;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 `;
 
 const Modal = styled.div`
@@ -652,7 +764,8 @@ const Modal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -661,12 +774,23 @@ const Modal = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(25px);
   max-width: 700px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 60%);
+    opacity: 0.8;
+    pointer-events: none;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -674,11 +798,18 @@ const ModalHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 24px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 1;
 
   h2 {
+    font-family: 'Space Grotesk', sans-serif;
     margin: 0;
     font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #ffffff;
   }
 `;
 
@@ -687,19 +818,22 @@ const CloseButton = styled.button`
   border: none;
   font-size: 32px;
   cursor: pointer;
-  color: #868e96;
+  color: #888888;
   line-height: 1;
   padding: 0;
   width: 32px;
   height: 32px;
+  transition: color 0.3s ease;
 
   &:hover {
-    color: #000;
+    color: #ffffff;
   }
 `;
 
 const ModalBody = styled.div`
   padding: 24px;
+  position: relative;
+  z-index: 1;
 `;
 
 const Section = styled.div`
@@ -711,10 +845,13 @@ const Section = styled.div`
 `;
 
 const SectionTitle = styled.h3`
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 18px;
   font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   margin: 0 0 16px 0;
-  color: #000;
+  color: #ffffff;
 `;
 
 const InfoRow = styled.div`
@@ -724,39 +861,45 @@ const InfoRow = styled.div`
 `;
 
 const Label = styled.div`
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;
   min-width: 140px;
-  color: #495057;
+  color: #888888;
   font-size: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 `;
 
 const Value = styled.div`
   flex: 1;
-  color: #212529;
+  color: #ffffff;
   font-size: 14px;
 `;
 
 const ApliqButton = styled.button`
   width: 100%;
   padding: 16px;
-  background: #ffa500;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 16px;
   font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255, 165, 0, 0.2);
+  border: 1px solid #ffa500;
+  color: #ffa500;
   cursor: pointer;
   margin-bottom: 12px;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
 
   &:hover {
-    opacity: 0.9;
+    background: rgba(255, 165, 0, 0.3);
+    border-color: #ffa500;
   }
 `;
 
 const HelpText = styled.p`
   font-size: 13px;
-  color: #666;
+  color: #888888;
   margin: 0;
   line-height: 1.5;
 `;
