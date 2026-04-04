@@ -10,6 +10,8 @@ import { validateCheckoutSession } from '../middleware/validation.js';
 
 import { db } from '../config/firebase.js';
 
+import { submitOrderToApliiq } from '../lib/apliiq.js';
+
 
 
 const DEFAULT_FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -535,6 +537,102 @@ const createStripeRouter = ({
           if (result.success) {
 
             console.log('Order saved to Firestore:', result.data.id);
+
+            
+
+            // Automatically submit order to Apliiq for fulfillment
+
+            try {
+
+              // Fetch the full order document to get all details including the ID
+
+              const orderDoc = await db.collection('orders').doc(result.data.id).get();
+
+              
+
+              if (orderDoc.exists) {
+
+                const fullOrder = { id: orderDoc.id, ...orderDoc.data() };
+
+                
+
+                console.log('Submitting order to Apliiq:', fullOrder.id);
+
+                const apliiqResult = await submitOrderToApliiq(fullOrder);
+
+                
+
+                if (apliiqResult.success) {
+
+                  // Update order with Apliiq order ID and status
+
+                  await db.collection('orders').doc(result.data.id).update({
+
+                    apliiqOrderId: apliiqResult.apliiqOrderId,
+
+                    status: 'submitted_to_supplier',
+
+                    apliqStatus: 'submitted',
+
+                    submittedToApliiqAt: new Date(),
+
+                  });
+
+                  
+
+                  console.log('Order submitted to Apliiq successfully:', {
+
+                    orderId: result.data.id,
+
+                    apliiqOrderId: apliiqResult.apliiqOrderId,
+
+                  });
+
+                } else {
+
+                  console.error('Failed to submit order to Apliiq:', apliiqResult.error);
+
+                  
+
+                  // Update order to indicate submission failed
+
+                  await db.collection('orders').doc(result.data.id).update({
+
+                    apliiqSubmissionError: apliiqResult.error,
+
+                    apliqStatus: 'submission_failed',
+
+                  });
+
+                }
+
+              }
+
+            } catch (apliiqError) {
+
+              console.error('Error during Apliiq submission:', apliiqError);
+
+              
+
+              // Don't fail the webhook - order is still saved
+
+              try {
+
+                await db.collection('orders').doc(result.data.id).update({
+
+                  apliiqSubmissionError: apliiqError.message,
+
+                  apliqStatus: 'submission_failed',
+
+                });
+
+              } catch (updateError) {
+
+                console.error('Failed to update order with error status:', updateError);
+
+              }
+
+            }
 
           } else {
 

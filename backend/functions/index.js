@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
 import createStripeRouter from './routes/stripe.js';
 import ordersRoutes from './routes/orders.js';
+import apliiqWebhooksRoutes from './routes/apliiq-webhooks.js';
 import {
   getSecretValue,
   firebasePrivateKey,
@@ -26,6 +27,7 @@ let stripeRouter = null;
 app.use(securityHeaders);
 app.use(cors({ origin: true, credentials: true }));
 app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
+app.use('/webhooks/apliiq', express.raw({ type: 'application/json' }));
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }));
 app.use(standardRateLimiter);
@@ -45,6 +47,7 @@ app.use('/stripe', (req, res, next) => {
   stripeRouter(req, res, next);
 });
 app.use('/orders', ordersRoutes);
+app.use('/webhooks/apliiq', apliiqWebhooksRoutes);
 
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Firebase Backend API' });

@@ -44,8 +44,13 @@ interface Order {
   status: string;
   apliqStatus: string;
   createdAt: Date | null;
-  apliqOrderId?: string;
+  apliiqOrderId?: string;
   trackingNumber?: string;
+  carrier?: string;
+  shippedAt?: Date | null;
+  fulfilledAt?: Date | null;
+  emailSent?: boolean;
+  emailSentAt?: Date | null;
 }
 
 interface OrderStats {
@@ -238,14 +243,29 @@ const AdminDashboard: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'not_submitted':
+      case 'submission_failed':
         return '#ff6b6b';
       case 'submitted':
         return '#ffa500';
+      case 'shipped':
+        return '#4dabf7';
       case 'fulfilled':
+      case 'fulfillment_complete':
         return '#51cf66';
       default:
         return '#868e96';
     }
+  };
+
+  const getTrackingUrl = (carrier: string, trackingNumber: string) => {
+    const normalizedCarrier = carrier?.toUpperCase() || '';
+    const trackingUrls: Record<string, string> = {
+      'USPS': `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
+      'UPS': `https://www.ups.com/track?tracknum=${trackingNumber}`,
+      'FEDEX': `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`,
+      'DHL': `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`,
+    };
+    return trackingUrls[normalizedCarrier] || `https://www.google.com/search?q=${encodeURIComponent(trackingNumber)}`;
   };
 
   const openApliqCustomStore = () => {
@@ -416,16 +436,45 @@ const AdminDashboard: React.FC = () => {
                     </StatusBadge>
                   </Value>
                 </InfoRow>
-                {selectedOrder.apliqOrderId && (
+                {selectedOrder.apliiqOrderId && (
                   <InfoRow>
                     <Label>Apliiq Order ID:</Label>
-                    <Value>{selectedOrder.apliqOrderId}</Value>
+                    <Value>{selectedOrder.apliiqOrderId}</Value>
                   </InfoRow>
                 )}
                 {selectedOrder.trackingNumber && (
                   <InfoRow>
                     <Label>Tracking Number:</Label>
-                    <Value>{selectedOrder.trackingNumber}</Value>
+                    <Value>
+                      <a 
+                        href={getTrackingUrl(selectedOrder.carrier || '', selectedOrder.trackingNumber)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ color: '#4dabf7', textDecoration: 'none' }}
+                      >
+                        {selectedOrder.trackingNumber}
+                      </a>
+                    </Value>
+                  </InfoRow>
+                )}
+                {selectedOrder.carrier && (
+                  <InfoRow>
+                    <Label>Carrier:</Label>
+                    <Value>{selectedOrder.carrier}</Value>
+                  </InfoRow>
+                )}
+                {selectedOrder.shippedAt && (
+                  <InfoRow>
+                    <Label>Shipped Date:</Label>
+                    <Value>{new Date(selectedOrder.shippedAt).toLocaleDateString()}</Value>
+                  </InfoRow>
+                )}
+                {selectedOrder.emailSent && (
+                  <InfoRow>
+                    <Label>Tracking Email:</Label>
+                    <Value>
+                      ✓ Sent {selectedOrder.emailSentAt ? `on ${new Date(selectedOrder.emailSentAt).toLocaleDateString()}` : ''}
+                    </Value>
                   </InfoRow>
                 )}
               </Section>
