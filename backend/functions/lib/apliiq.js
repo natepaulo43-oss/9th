@@ -165,11 +165,11 @@ function convertOrderToApliiqFormat(order) {
     }
     
     lineItems.push({
-      id: order.stripeSessionId || order.id,
+      id: `${order.id}-${lineItems.length + 1}`,
       title: productName,
       name: `${productName} - ${size}`,
       quantity: quantity,
-      price: "0.00", // Price already paid via Stripe
+      price: "0.00",
       sku: apliiqSku,
       grams: 0,
     });
@@ -199,12 +199,12 @@ function convertOrderToApliiqFormat(order) {
     zip: shippingAddress.postal_code || shippingAddress.zip || '',
     province: stateCode,
     province_code: stateCode,
-    country: countryCode === 'US' ? 'United States' : shippingAddress.country,
+    country: countryCode === 'US' ? 'United States' : shippingAddress.country || 'United States',
     country_code: countryCode,
     phone: order.customerPhone || '',
   };
   
-  // Validate required fields
+  // Validate required fields per Apliiq API specification
   if (!apliiqShippingAddress.first_name) {
     throw new Error('Shipping first name is required');
   }
@@ -218,13 +218,16 @@ function convertOrderToApliiqFormat(order) {
     throw new Error('Shipping city is required');
   }
   if (!apliiqShippingAddress.province) {
-    throw new Error('Shipping state is required');
+    throw new Error('Shipping state/province is required');
   }
   if (!apliiqShippingAddress.zip) {
     throw new Error('Shipping zip code is required');
   }
+  if (countryCode === 'US' && !apliiqShippingAddress.province_code) {
+    throw new Error('Shipping province_code (2-letter state code) is required for US orders');
+  }
   
-  // Build Apliiq order payload
+  // Build Apliiq order payload per their API specification
   const orderId = order.id || order.stripeSessionId;
   const payload = {
     id: orderId,
