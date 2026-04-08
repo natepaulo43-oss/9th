@@ -30,7 +30,7 @@ export const config = {
   apliiq: {
     appKey: getSecretValue(apliiqAppKey),
     sharedSecret: getSecretValue(apliiqSharedSecret),
-    baseUrl: getEnvVar('APLIIQ_BASE_URL', false) || 'https://apliiq.com/api',
+    baseUrl: getEnvVar('APLIIQ_BASE_URL', false) || 'https://api.apliiq.com',
     store: '9thform',
   },
   
