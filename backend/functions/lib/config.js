@@ -3,6 +3,8 @@
  * Validates required variables at startup and provides typed access
  */
 
+import { getSecretValue, apliiqAppKey, apliiqSharedSecret } from '../config/secrets.js';
+
 /**
  * Gets an environment variable and throws if missing
  * @param {string} key - Environment variable name
@@ -26,10 +28,10 @@ function getEnvVar(key, required = true) {
 export const config = {
   // Apliiq API Configuration
   apliiq: {
-    appKey: getEnvVar('APLIIQ_APP_KEY', false),
-    sharedSecret: getEnvVar('APLIIQ_SHARED_SECRET', false),
+    appKey: getSecretValue(apliiqAppKey),
+    sharedSecret: getSecretValue(apliiqSharedSecret),
     baseUrl: getEnvVar('APLIIQ_BASE_URL', false) || 'https://apliiq.com/api',
-    store: 'thform',
+    store: '9thform',
   },
   
   // Resend Email Configuration

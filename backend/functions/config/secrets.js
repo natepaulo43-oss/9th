@@ -3,6 +3,8 @@ import { defineSecret } from 'firebase-functions/params';
 const firebasePrivateKey = defineSecret('SERVICE_ACCOUNT_PRIVATE_KEY');
 const stripeSecretKey = defineSecret('STRIPE_SECRET_KEY');
 const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
+const apliiqAppKey = defineSecret('APLIIQ_APP_KEY');
+const apliiqSharedSecret = defineSecret('APLIIQ_SHARED_SECRET');
 
 const normalizeFallbacks = (envFallbacks) => {
   if (!envFallbacks) {
@@ -33,4 +35,4 @@ export const getSecretValue = (secretHandle, envFallbacks) => {
   return '';
 };
 
-export { firebasePrivateKey, stripeSecretKey, stripeWebhookSecret };
+export { firebasePrivateKey, stripeSecretKey, stripeWebhookSecret, apliiqAppKey, apliiqSharedSecret };

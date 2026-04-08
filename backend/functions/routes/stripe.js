@@ -190,6 +190,8 @@ const createStripeRouter = ({
 
           quantity,
 
+          size: item.size || undefined,
+
           product: catalogEntry,
 
         };
@@ -260,7 +262,12 @@ const createStripeRouter = ({
 
           cart: JSON.stringify(
 
-            sanitizedItems.map(({ productId, quantity }) => ({ productId, quantity }))
+            sanitizedItems.map(({ productId, quantity, size, product }) => ({ 
+              productId, 
+              quantity,
+              size,
+              productName: product.name
+            }))
 
           ),
 
@@ -332,7 +339,11 @@ const createStripeRouter = ({
 
       // Retrieve the session from Stripe
 
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+
+        expand: ['payment_intent.latest_charge']
+
+      });
 
 
 
@@ -374,13 +385,25 @@ const createStripeRouter = ({
 
 
 
+      // Extract billing address from payment intent
+
+      let billingAddress = {};
+
+      if (session.payment_intent?.latest_charge?.billing_details?.address) {
+
+        billingAddress = session.payment_intent.latest_charge.billing_details.address;
+
+      }
+
+
+
       // Create the order
 
       const orderData = {
 
         stripeSessionId: session.id,
 
-        stripePaymentIntentId: session.payment_intent,
+        stripePaymentIntentId: session.payment_intent?.id || session.payment_intent,
 
         customerEmail: session.customer_details?.email || '',
 
@@ -388,9 +411,11 @@ const createStripeRouter = ({
 
         customerPhone: session.customer_details?.phone || '',
 
-        shippingAddress: session.shipping_details?.address || session.customer_details?.address || {},
+        shippingAddress: session.shipping_details?.address || {},
 
         shippingName: session.shipping_details?.name || session.customer_details?.name || '',
+
+        billingAddress: billingAddress,
 
         amountTotal: session.amount_total,
 
@@ -502,31 +527,55 @@ const createStripeRouter = ({
 
         try {
 
+          // Retrieve full session with payment intent details to get billing address
+
+          const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+
+            expand: ['payment_intent.latest_charge']
+
+          });
+
+
+
+          // Extract billing address from payment intent
+
+          let billingAddress = {};
+
+          if (fullSession.payment_intent?.latest_charge?.billing_details?.address) {
+
+            billingAddress = fullSession.payment_intent.latest_charge.billing_details.address;
+
+          }
+
+
+
           const orderData = {
 
-            stripeSessionId: session.id,
+            stripeSessionId: fullSession.id,
 
-            stripePaymentIntentId: session.payment_intent,
+            stripePaymentIntentId: fullSession.payment_intent?.id || fullSession.payment_intent,
 
-            customerEmail: session.customer_details?.email || '',
+            customerEmail: fullSession.customer_details?.email || '',
 
-            customerName: session.customer_details?.name || '',
+            customerName: fullSession.customer_details?.name || '',
 
-            customerPhone: session.customer_details?.phone || '',
+            customerPhone: fullSession.customer_details?.phone || '',
 
-            shippingAddress: session.shipping_details?.address || session.customer_details?.address || {},
+            shippingAddress: fullSession.shipping_details?.address || {},
 
-            shippingName: session.shipping_details?.name || session.customer_details?.name || '',
+            shippingName: fullSession.shipping_details?.name || fullSession.customer_details?.name || '',
 
-            amountTotal: session.amount_total,
+            billingAddress: billingAddress,
 
-            amountSubtotal: session.amount_subtotal,
+            amountTotal: fullSession.amount_total,
 
-            currency: session.currency,
+            amountSubtotal: fullSession.amount_subtotal,
 
-            items: JSON.parse(session.metadata?.cart || '[]'),
+            currency: fullSession.currency,
 
-            paymentStatus: session.payment_status,
+            items: JSON.parse(fullSession.metadata?.cart || '[]'),
+
+            paymentStatus: fullSession.payment_status,
 
           };
 

@@ -484,3 +484,122 @@
   }
 }
 
+/* Size Selection Modal */
+.size-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.size-modal {
+  background: rgba(26, 26, 26, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.size-modal h3 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-white);
+  margin: 0 0 0.5rem 0;
+}
+
+.size-modal-product {
+  color: var(--color-gray);
+  font-size: 0.95rem;
+  margin: 0 0 2rem 0;
+  letter-spacing: 0.05em;
+}
+
+.size-options {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.size-button {
+  width: 60px;
+  height: 60px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: var(--color-white);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.size-button:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.size-button.selected {
+  border-color: var(--color-white);
+  background: var(--color-white);
+  color: var(--color-black);
+}
+
+.size-modal-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.size-modal-cancel,
+.size-modal-confirm {
+  flex: 1;
+  padding: 1rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.size-modal-cancel {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--color-white);
+}
+
+.size-modal-cancel:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.size-modal-confirm {
+  background: var(--color-white);
+  color: var(--color-black);
+}
+
+.size-modal-confirm:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.size-modal-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+

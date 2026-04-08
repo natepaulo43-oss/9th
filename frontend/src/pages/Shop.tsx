@@ -15,6 +15,7 @@ interface Product {
 interface CartItem {
   product: Product;
   quantity: number;
+  size?: string;
 }
 
 const formatCurrency = (value: number, currency: string = 'usd') =>
@@ -47,6 +48,8 @@ const Shop: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [sizeModalProduct, setSizeModalProduct] = useState<Product | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string>('');
 
   const products: Product[] = [
     {
@@ -97,28 +100,48 @@ const Shop: React.FC = () => {
     return product.image;
   };
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, size?: string) => {
+    // Check if product requires size selection
+    if (product.name === 'Phased Motion Tee' && !size) {
+      setSizeModalProduct(product);
+      setSelectedSize('');
+      return;
+    }
+
     setCartItems((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const existing = prev.find((item) => 
+        item.product.id === product.id && 
+        (size ? item.size === size : !item.size)
+      );
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id
+          item.product.id === product.id && (size ? item.size === size : !item.size)
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity: 1, size }];
     });
   };
 
-  const handleRemoveFromCart = (productId: string) => {
-    setCartItems((prev) => prev.filter((item) => item.product.id !== productId));
+  const handleSizeSelection = (size: string) => {
+    if (sizeModalProduct) {
+      handleAddToCart(sizeModalProduct, size);
+      setSizeModalProduct(null);
+      setSelectedSize('');
+    }
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const handleRemoveFromCart = (productId: string, size?: string) => {
+    setCartItems((prev) => prev.filter((item) => 
+      !(item.product.id === productId && (size ? item.size === size : !item.size))
+    ));
+  };
+
+  const updateQuantity = (productId: string, delta: number, size?: string) => {
     setCartItems((prev) =>
       prev.map((item) =>
-        item.product.id === productId
+        item.product.id === productId && (size ? item.size === size : !item.size)
           ? { ...item, quantity: Math.max(1, item.quantity + delta) }
           : item
       )
@@ -146,6 +169,7 @@ const Shop: React.FC = () => {
           items: cartItems.map((item) => ({
             productId: item.product.id,
             quantity: item.quantity,
+            size: item.size,
           })),
         }),
       });
@@ -262,17 +286,20 @@ const Shop: React.FC = () => {
             {cartItems.length === 0 ? (
               <p className="empty-cart">Your cart is empty. Add a piece of 9thform to get started.</p>
             ) : (
-              cartItems.map((item) => (
-                <div className="cart-item" key={item.product.id}>
+              cartItems.map((item, idx) => (
+                <div className="cart-item" key={`${item.product.id}-${item.size || 'no-size'}-${idx}`}>
                   <div className="cart-item-thumb">
                     <img src={item.product.image} alt={item.product.name} />
                   </div>
                   <div className="cart-item-details">
                     <div className="cart-item-header">
-                      <h3 className="cart-item-name">{item.product.name}</h3>
+                      <h3 className="cart-item-name">
+                        {item.product.name}
+                        {item.size && <span style={{ fontSize: '0.9em', opacity: 0.7, marginLeft: '8px' }}>({item.size})</span>}
+                      </h3>
                       <button
                         className="remove-item"
-                        onClick={() => handleRemoveFromCart(item.product.id)}
+                        onClick={() => handleRemoveFromCart(item.product.id, item.size)}
                         aria-label={`Remove ${item.product.name}`}
                       >
                         remove
@@ -284,7 +311,7 @@ const Shop: React.FC = () => {
                     <div className="cart-item-controls">
                       <div className="quantity-pill">
                         <button
-                          onClick={() => updateQuantity(item.product.id, -1)}
+                          onClick={() => updateQuantity(item.product.id, -1, item.size)}
                           disabled={item.quantity === 1}
                           aria-label={`Decrease quantity for ${item.product.name}`}
                         >
@@ -292,7 +319,7 @@ const Shop: React.FC = () => {
                         </button>
                         <span>{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, 1)}
+                          onClick={() => updateQuantity(item.product.id, 1, item.size)}
                           aria-label={`Increase quantity for ${item.product.name}`}
                         >
                           +
@@ -325,6 +352,48 @@ const Shop: React.FC = () => {
           </div>
         </aside>
       </div>
+
+      {/* Size Selection Modal */}
+      {sizeModalProduct && (
+        <div className="size-modal-overlay" onClick={() => setSizeModalProduct(null)}>
+          <motion.div 
+            className="size-modal"
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h3>Select Size</h3>
+            <p className="size-modal-product">{sizeModalProduct.name}</p>
+            <div className="size-options">
+              {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                <button
+                  key={size}
+                  className={`size-button ${selectedSize === size ? 'selected' : ''}`}
+                  onClick={() => setSelectedSize(size)}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+            <div className="size-modal-actions">
+              <button 
+                className="size-modal-cancel"
+                onClick={() => setSizeModalProduct(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="size-modal-confirm"
+                onClick={() => selectedSize && handleSizeSelection(selectedSize)}
+                disabled={!selectedSize}
+              >
+                Add to Cart
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

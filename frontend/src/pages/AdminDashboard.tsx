@@ -38,6 +38,14 @@ interface Order {
     country?: string;
   };
   shippingName: string;
+  billingAddress?: {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  };
   amountTotal: number;
   currency: string;
   items: Array<{ productId: string; quantity: number }>;
@@ -409,6 +417,16 @@ const AdminDashboard: React.FC = () => {
                   <Value>{formatAddress(selectedOrder.shippingAddress)}</Value>
                 </InfoRow>
               </Section>
+
+              {selectedOrder.billingAddress && Object.keys(selectedOrder.billingAddress).length > 0 && (
+                <Section>
+                  <SectionTitle>Billing Address</SectionTitle>
+                  <InfoRow>
+                    <Label>Address:</Label>
+                    <Value>{formatAddress(selectedOrder.billingAddress)}</Value>
+                  </InfoRow>
+                </Section>
+              )}
 
               <Section>
                 <SectionTitle>Order Items</SectionTitle>
