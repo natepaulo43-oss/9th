@@ -86,6 +86,14 @@ async function apliiqRequest(method, path, payload = {}) {
     throw new Error('Apliiq API credentials not configured');
   }
   
+  console.log('[Apliiq API] Credentials check:', {
+    hasAppKey: !!appKey,
+    appKeyLength: appKey?.length,
+    hasSharedSecret: !!sharedSecret,
+    sharedSecretLength: sharedSecret?.length,
+    baseUrl,
+  });
+  
   // Generate timestamp and nonce for authentication
   const timestamp = Math.floor(Date.now() / 1000); // UNIX timestamp
   const nonce = crypto.randomBytes(16).toString('hex'); // Random unique string
@@ -104,6 +112,8 @@ async function apliiqRequest(method, path, payload = {}) {
   console.log(`[Apliiq API] ${method} ${path}`, {
     url,
     hasPayload: Object.keys(payload).length > 0,
+    timestamp,
+    authHeaderFormat: authHeader.split(':').map((part, i) => i === 1 ? '[SIGNATURE]' : part.substring(0, 10) + '...').join(':'),
   });
   
   try {
