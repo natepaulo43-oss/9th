@@ -48,7 +48,7 @@ interface Order {
   };
   amountTotal: number;
   currency: string;
-  items: Array<{ productId: string; quantity: number }>;
+  items: Array<{ productId: string; quantity: number; size?: string; productName?: string }>;
   status: string;
   apliqStatus: string;
   createdAt: Date | null;
@@ -432,9 +432,9 @@ const AdminDashboard: React.FC = () => {
                 <SectionTitle>Order Items</SectionTitle>
                 {selectedOrder.items.map((item, index) => (
                   <InfoRow key={index}>
-                    <Label>Product ID:</Label>
+                    <Label>{item.productName || 'Product'}:</Label>
                     <Value>
-                      {item.productId} (Qty: {item.quantity})
+                      {item.productId} (Qty: {item.quantity}){item.size ? ` - Size: ${item.size}` : ''}
                     </Value>
                   </InfoRow>
                 ))}

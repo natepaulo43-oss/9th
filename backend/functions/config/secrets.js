@@ -17,7 +17,7 @@ export const getSecretValue = (secretHandle, envFallbacks) => {
   try {
     const value = secretHandle?.value?.();
     if (value) {
-      return value;
+      return value.trim();
     }
   } catch (error) {
     console.warn(
@@ -28,7 +28,7 @@ export const getSecretValue = (secretHandle, envFallbacks) => {
 
   for (const fallback of normalizeFallbacks(envFallbacks)) {
     if (process.env[fallback]) {
-      return process.env[fallback];
+      return process.env[fallback].trim();
     }
   }
 
