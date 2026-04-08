@@ -46,24 +46,30 @@ import { getApliiqSku } from './apliiq-skus.js';
 
 /**
  * Generates HMAC-SHA256 signature for Apliiq API request
- * @param {string} method - HTTP method (GET, POST, etc.)
- * @param {string} path - API endpoint path
+ * Format: RTS:SIG:APPID:STATE
+ * SIG = base64_encode(HMACSHA256([APPID][RTS][STATE][Base64_ReqContent], SHARED_SECRET))
+ * @param {string} appKey - Apliiq App Key
+ * @param {string} sharedSecret - Apliiq Shared Secret
+ * @param {number} timestamp - Request timestamp (UNIX time)
+ * @param {string} nonce - Random unique string
  * @param {Object} payload - Request body
- * @returns {string} Base64-encoded HMAC signature
+ * @returns {string} Authorization header value
  */
-function generateApliiqSignature(method, path, payload = {}) {
-  const { appKey, sharedSecret } = config.apliiq;
-  
-  // Create the string to sign: METHOD + PATH + JSON_PAYLOAD
+function generateApliiqAuthHeader(appKey, sharedSecret, timestamp, nonce, payload = {}) {
+  // Base64 encode the request content (or empty string if no payload)
   const payloadString = Object.keys(payload).length > 0 ? JSON.stringify(payload) : '';
-  const stringToSign = `${method.toUpperCase()}${path}${payloadString}`;
+  const base64Content = Buffer.from(payloadString).toString('base64');
+  
+  // Create string to sign: [APPID][RTS][STATE][Base64_ReqContent]
+  const stringToSign = `${appKey}${timestamp}${nonce}${base64Content}`;
   
   // Generate HMAC-SHA256 signature
   const hmac = crypto.createHmac('sha256', sharedSecret);
   hmac.update(stringToSign);
   const signature = hmac.digest('base64');
   
-  return signature;
+  // Return format: RTS:SIG:APPID:STATE
+  return `${timestamp}:${signature}:${appKey}:${nonce}`;
 }
 
 /**
@@ -74,21 +80,25 @@ function generateApliiqSignature(method, path, payload = {}) {
  * @returns {Promise<Object>} API response
  */
 async function apliiqRequest(method, path, payload = {}) {
-  const { appKey, baseUrl } = config.apliiq;
+  const { appKey, sharedSecret, baseUrl } = config.apliiq;
   
-  if (!appKey || !config.apliiq.sharedSecret) {
+  if (!appKey || !sharedSecret) {
     throw new Error('Apliiq API credentials not configured');
   }
   
-  // Generate authentication signature
-  const signature = generateApliiqSignature(method, path, payload);
+  // Generate timestamp and nonce for authentication
+  const timestamp = Math.floor(Date.now() / 1000); // UNIX timestamp
+  const nonce = crypto.randomBytes(16).toString('hex'); // Random unique string
+  
+  // Generate authentication header
+  const authHeader = generateApliiqAuthHeader(appKey, sharedSecret, timestamp, nonce, payload);
   
   const url = `${baseUrl}${path}`;
   
   const headers = {
     'Content-Type': 'application/json',
-    'X-Apliiq-App-Key': appKey,
-    'X-Apliiq-Signature': signature,
+    'Accept': 'application/json',
+    'x-apliiq-auth': authHeader,
   };
   
   console.log(`[Apliiq API] ${method} ${path}`, {
@@ -155,8 +165,13 @@ function convertOrderToApliiqFormat(order) {
     }
     
     lineItems.push({
+      id: order.stripeSessionId || order.id,
+      title: productName,
+      name: `${productName} - ${size}`,
+      quantity: quantity,
+      price: "0.00", // Price already paid via Stripe
       sku: apliiqSku,
-      quantity,
+      grams: 0,
     });
   }
   
@@ -166,20 +181,35 @@ function convertOrderToApliiqFormat(order) {
   
   // Format shipping address
   const shippingAddress = order.shippingAddress || {};
+  const nameParts = (order.shippingName || order.customerName || '').split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  
+  // Get state code (2 letters for US)
+  const stateCode = shippingAddress.state || '';
+  const countryCode = (shippingAddress.country || 'US').toUpperCase();
   
   const apliiqShippingAddress = {
+    first_name: firstName,
+    last_name: lastName,
     name: order.shippingName || order.customerName || '',
     address1: shippingAddress.line1 || '',
     address2: shippingAddress.line2 || '',
     city: shippingAddress.city || '',
-    state: shippingAddress.state || '',
     zip: shippingAddress.postal_code || shippingAddress.zip || '',
-    country: shippingAddress.country || 'US',
+    province: stateCode,
+    province_code: stateCode,
+    country: countryCode === 'US' ? 'United States' : shippingAddress.country,
+    country_code: countryCode,
+    phone: order.customerPhone || '',
   };
   
   // Validate required fields
-  if (!apliiqShippingAddress.name) {
-    throw new Error('Shipping name is required');
+  if (!apliiqShippingAddress.first_name) {
+    throw new Error('Shipping first name is required');
+  }
+  if (!apliiqShippingAddress.last_name) {
+    throw new Error('Shipping last name is required');
   }
   if (!apliiqShippingAddress.address1) {
     throw new Error('Shipping address is required');
@@ -187,7 +217,7 @@ function convertOrderToApliiqFormat(order) {
   if (!apliiqShippingAddress.city) {
     throw new Error('Shipping city is required');
   }
-  if (!apliiqShippingAddress.state) {
+  if (!apliiqShippingAddress.province) {
     throw new Error('Shipping state is required');
   }
   if (!apliiqShippingAddress.zip) {
@@ -195,17 +225,18 @@ function convertOrderToApliiqFormat(order) {
   }
   
   // Build Apliiq order payload
+  const orderId = order.id || order.stripeSessionId;
   const payload = {
-    store: config.apliiq.store,
-    order_id: order.id || order.stripeSessionId,
+    id: orderId,
+    number: orderId,
+    name: `#${orderId}`,
+    order_number: orderId,
     line_items: lineItems,
     shipping_address: apliiqShippingAddress,
+    shipping_lines: [{
+      code: "standard"
+    }]
   };
-  
-  // Add customer email if available
-  if (order.customerEmail) {
-    payload.email = order.customerEmail;
-  }
   
   return payload;
 }
@@ -225,21 +256,21 @@ export async function submitOrderToApliiq(order) {
     console.log(`[Apliiq] Order payload:`, JSON.stringify(apliiqPayload, null, 2));
     
     // Submit order to Apliiq API
-    // Endpoint: POST /orders
-    const response = await apliiqRequest('POST', '/orders', apliiqPayload);
+    // Endpoint: POST /v1/Order
+    const response = await apliiqRequest('POST', '/v1/Order', apliiqPayload);
     
-    if (!response || !response.apliiq_order_id) {
+    if (!response || !response.id) {
       throw new Error('Invalid response from Apliiq API - missing order ID');
     }
     
     console.log(`[Apliiq] Order submitted successfully:`, {
       orderId: order.id,
-      apliiqOrderId: response.apliiq_order_id,
+      apliiqOrderId: response.id,
     });
     
     return {
       success: true,
-      apliiqOrderId: response.apliiq_order_id,
+      apliiqOrderId: response.id,
     };
   } catch (error) {
     console.error(`[Apliiq] Failed to submit order ${order.id}:`, error);
