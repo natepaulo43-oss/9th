@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import axios from 'axios';
 import { config } from './config.js';
 import { getApliiqSku } from './apliiq-skus.js';
+import { getFullStateName } from './stateMapping.js';
 
 /**
  * @typedef {Object} ApliiqLineItem
@@ -199,6 +200,9 @@ function convertOrderToApliiqFormat(order) {
   const stateCode = shippingAddress.state || '';
   const countryCode = (shippingAddress.country || 'US').toUpperCase();
   
+  // Convert state code to full state name for province field
+  const fullStateName = getFullStateName(stateCode, countryCode);
+  
   const apliiqShippingAddress = {
     first_name: firstName,
     last_name: lastName,
@@ -207,7 +211,7 @@ function convertOrderToApliiqFormat(order) {
     address2: shippingAddress.line2 || '',
     city: shippingAddress.city || '',
     zip: shippingAddress.postal_code || shippingAddress.zip || '',
-    province: stateCode,
+    province: fullStateName,
     province_code: stateCode,
     country: countryCode === 'US' ? 'United States' : shippingAddress.country || 'United States',
     country_code: countryCode,
