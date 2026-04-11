@@ -114,7 +114,27 @@ async function apliiqRequest(method, path, payload = {}) {
     url,
     hasPayload: Object.keys(payload).length > 0,
     timestamp,
+    nonce,
     authHeaderFormat: authHeader.split(':').map((part, i) => i === 1 ? '[SIGNATURE]' : part.substring(0, 10) + '...').join(':'),
+  });
+  
+  // Log EXACT headers being sent on the wire
+  console.log('[Apliiq API] EXACT REQUEST HEADERS:', {
+    'Content-Type': headers['Content-Type'],
+    'Accept': headers['Accept'],
+    'x-apliiq-auth': authHeader, // Full auth header value
+  });
+  
+  console.log('[Apliiq API] Auth Header Breakdown:', {
+    headerName: 'x-apliiq-auth',
+    headerValue: authHeader,
+    format: 'RTS:SIG:APPID:STATE',
+    parts: {
+      RTS: authHeader.split(':')[0],
+      SIG: authHeader.split(':')[1]?.substring(0, 20) + '...',
+      APPID: authHeader.split(':')[2],
+      STATE: authHeader.split(':')[3],
+    }
   });
   
   try {
@@ -163,6 +183,7 @@ function convertOrderToApliiqFormat(order) {
     const productName = item.product?.name || item.productName;
     const size = item.size || item.variant || 'ONE_SIZE';
     const quantity = item.quantity || 1;
+    const priceInCents = item.price || item.product?.price || 0;
     
     if (!productName) {
       throw new Error(`Line item missing product name: ${JSON.stringify(item)}`);
@@ -175,12 +196,15 @@ function convertOrderToApliiqFormat(order) {
       throw new Error(`No Apliiq SKU mapping found for ${productName} (size: ${size})`);
     }
     
+    // Convert price from cents to dollars with 2 decimal places
+    const priceInDollars = (priceInCents / 100).toFixed(2);
+    
     lineItems.push({
       id: `${order.id}-${lineItems.length + 1}`,
       title: productName,
       name: `${productName} - ${size}`,
       quantity: quantity,
-      price: "0.00",
+      price: priceInDollars,
       sku: apliiqSku,
       grams: 0,
     });
@@ -248,6 +272,7 @@ function convertOrderToApliiqFormat(order) {
     number: orderId,
     name: `#${orderId}`,
     order_number: orderId,
+    email: order.customerEmail || '',
     line_items: lineItems,
     shipping_address: apliiqShippingAddress,
     shipping_lines: [{

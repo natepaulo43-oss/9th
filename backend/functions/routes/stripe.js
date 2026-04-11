@@ -266,7 +266,8 @@ const createStripeRouter = ({
               productId, 
               quantity,
               size,
-              productName: product.name
+              productName: product.name,
+              price: product.price
             }))
 
           ),
