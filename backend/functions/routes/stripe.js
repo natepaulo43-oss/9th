@@ -438,6 +438,79 @@ const createStripeRouter = ({
 
         console.log('Order created via verify-session:', result.data.id);
 
+        // Submit to Apliiq for fulfillment (same as webhook path)
+        try {
+
+          const orderDoc = await db.collection('orders').doc(result.data.id).get();
+
+          if (orderDoc.exists) {
+
+            const fullOrder = { id: orderDoc.id, ...orderDoc.data() };
+
+            console.log('Submitting order to Apliiq (via verify-session):', fullOrder.id);
+
+            const apliiqResult = await submitOrderToApliiq(fullOrder);
+
+            if (apliiqResult.success) {
+
+              await db.collection('orders').doc(result.data.id).update({
+
+                apliiqOrderId: apliiqResult.apliiqOrderId,
+
+                status: 'submitted_to_supplier',
+
+                apliqStatus: 'submitted',
+
+                submittedToApliiqAt: new Date(),
+
+              });
+
+              console.log('Order submitted to Apliiq via verify-session:', {
+
+                orderId: result.data.id,
+
+                apliiqOrderId: apliiqResult.apliiqOrderId,
+
+              });
+
+            } else {
+
+              console.error('Failed to submit order to Apliiq (via verify-session):', apliiqResult.error);
+
+              await db.collection('orders').doc(result.data.id).update({
+
+                apliiqSubmissionError: apliiqResult.error,
+
+                apliqStatus: 'submission_failed',
+
+              });
+
+            }
+
+          }
+
+        } catch (apliiqError) {
+
+          console.error('Error during Apliiq submission (via verify-session):', apliiqError);
+
+          try {
+
+            await db.collection('orders').doc(result.data.id).update({
+
+              apliiqSubmissionError: apliiqError.message,
+
+              apliqStatus: 'submission_failed',
+
+            });
+
+          } catch (updateError) {
+
+            console.error('Failed to update order with error status:', updateError);
+
+          }
+
+        }
+
         return res.json({ success: true, orderId: result.data.id });
 
       } else {

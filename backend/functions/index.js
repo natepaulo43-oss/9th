@@ -32,7 +32,10 @@ app.use('/stripe/webhook', express.raw({ type: 'application/json' }), (req, res,
   req.rawBody = req.body; // Buffer from express.raw, needed for Stripe signature verification
   next();
 });
-app.use('/webhooks/apliiq', express.raw({ type: 'application/json' }));
+app.use('/webhooks/apliiq', express.raw({ type: 'application/json' }), (req, res, next) => {
+  req.rawBody = req.body; // Buffer from express.raw, needed for Apliiq signature verification
+  next();
+});
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }));
 app.use(standardRateLimiter);

@@ -133,7 +133,7 @@ export async function markOrderSubmittedToApliiq(orderId, apliqOrderId = null) {
     };
 
     if (apliqOrderId) {
-      updateData.apliqOrderId = apliqOrderId;
+      updateData.apliiqOrderId = apliqOrderId;
     }
 
     await db.collection(ORDERS_COLLECTION).doc(orderId).update(updateData);

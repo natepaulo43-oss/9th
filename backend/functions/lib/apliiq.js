@@ -174,7 +174,7 @@ async function apliiqRequest(method, path, payload = {}) {
     });
     
     throw new Error(
-      `Apliiq API request failed: ${error.response?.data?.message || error.message}`
+      `Apliiq API request failed: ${error.response?.data?.Message || error.response?.data?.message || error.message}`
     );
   }
 }
@@ -210,11 +210,11 @@ function convertOrderToApliiqFormat(order) {
       throw new Error(`No Apliiq SKU mapping found for ${productName} (size: ${size})`);
     }
     
-    // Convert price from cents to dollars with 2 decimal places
-    const priceInDollars = (priceInCents / 100).toFixed(2);
+    // Convert price from cents to dollars (must be a number, not a string)
+    const priceInDollars = parseFloat((priceInCents / 100).toFixed(2));
     
     lineItems.push({
-      id: `${order.id}-${lineItems.length + 1}`,
+      id: toNumericOrderId(`${order.id}-${lineItems.length + 1}`),
       title: productName,
       name: `${productName} - ${size}`,
       quantity: quantity,
@@ -283,7 +283,7 @@ function convertOrderToApliiqFormat(order) {
   const orderId = order.id || order.stripeSessionId;
   const numericId = toNumericOrderId(orderId);
   const payload = {
-    id: orderId,
+    id: numericId,
     number: numericId,
     name: `#${numericId}`,
     order_number: numericId,
@@ -316,18 +316,18 @@ export async function submitOrderToApliiq(order) {
     // Endpoint: POST /v1/Order
     const response = await apliiqRequest('POST', '/v1/Order', apliiqPayload);
     
-    if (!response || !response.id) {
-      throw new Error('Invalid response from Apliiq API - missing order ID');
-    }
+    // Apliiq may return id, order_id, or orderId — accept any
+    const apliiqOrderId = response?.id || response?.order_id || response?.orderId;
     
-    console.log(`[Apliiq] Order submitted successfully:`, {
+    console.log(`[Apliiq] Order submitted successfully (full response):`, JSON.stringify(response));
+    console.log(`[Apliiq] Order submitted:`, {
       orderId: order.id,
-      apliiqOrderId: response.id,
+      apliiqOrderId,
     });
     
     return {
       success: true,
-      apliiqOrderId: response.id,
+      apliiqOrderId: apliiqOrderId || 'unknown',
     };
   } catch (error) {
     console.error(`[Apliiq] Failed to submit order ${order.id}:`, error);
