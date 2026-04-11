@@ -5,6 +5,7 @@ const stripeSecretKey = defineSecret('STRIPE_SECRET_KEY');
 const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
 const apliiqAppKey = defineSecret('APLIIQ_APP_KEY');
 const apliiqSharedSecret = defineSecret('APLIIQ_SHARED_SECRET');
+const resendApiKey = defineSecret('RESEND_API_KEY');
 
 const normalizeFallbacks = (envFallbacks) => {
   if (!envFallbacks) {
@@ -35,4 +36,4 @@ export const getSecretValue = (secretHandle, envFallbacks) => {
   return '';
 };
 
-export { firebasePrivateKey, stripeSecretKey, stripeWebhookSecret, apliiqAppKey, apliiqSharedSecret };
+export { firebasePrivateKey, stripeSecretKey, stripeWebhookSecret, apliiqAppKey, apliiqSharedSecret, resendApiKey };

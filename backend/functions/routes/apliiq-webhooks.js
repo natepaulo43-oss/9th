@@ -83,12 +83,16 @@ router.post('/fulfillment', validateApliiqWebhook, async (req, res) => {
   // Process webhook asynchronously
   (async () => {
     try {
+      const bodyData = req.rawBody
+        ? JSON.parse(req.rawBody.toString('utf8'))
+        : req.body;
+
       const {
         apliiq_order_id,
         tracking_number,
         carrier,
         shipped_at,
-      } = req.body;
+      } = bodyData;
       
       console.log('[Apliiq Webhook] Fulfillment notification received:', {
         apliiq_order_id,
@@ -173,10 +177,14 @@ router.post('/shipment-complete', validateApliiqWebhook, async (req, res) => {
   // Process webhook asynchronously
   (async () => {
     try {
+      const bodyData = req.rawBody
+        ? JSON.parse(req.rawBody.toString('utf8'))
+        : req.body;
+
       const {
         apliiq_order_id,
         completed_at,
-      } = req.body;
+      } = bodyData;
       
       console.log('[Apliiq Webhook] Shipment complete notification received:', {
         apliiq_order_id,
@@ -209,6 +217,30 @@ router.post('/shipment-complete', validateApliiqWebhook, async (req, res) => {
       await db.collection('orders').doc(order.id).update(updateData);
       
       console.log('[Apliiq Webhook] Order marked as fulfillment complete:', order.id);
+      
+      // Send delivery confirmation / thank-you email
+      try {
+        const { sendDeliveryEmail } = await import('../lib/email.js');
+        
+        const emailResult = await sendDeliveryEmail({
+          orderId: order.id,
+          customerEmail: order.data.customerEmail,
+          customerName: order.data.customerName,
+        });
+        
+        if (emailResult.success) {
+          await db.collection('orders').doc(order.id).update({
+            deliveryEmailSent: true,
+            deliveryEmailSentAt: FieldValue.serverTimestamp(),
+          });
+          
+          console.log('[Apliiq Webhook] Delivery confirmation email sent successfully');
+        } else {
+          console.error('[Apliiq Webhook] Failed to send delivery email:', emailResult.error);
+        }
+      } catch (emailError) {
+        console.error('[Apliiq Webhook] Error sending delivery email:', emailError);
+      }
     } catch (error) {
       console.error('[Apliiq Webhook] Error processing shipment-complete webhook:', error);
     }

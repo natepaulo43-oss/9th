@@ -3,7 +3,7 @@
  * Validates required variables at startup and provides typed access
  */
 
-import { getSecretValue, apliiqAppKey, apliiqSharedSecret } from '../config/secrets.js';
+import { getSecretValue, apliiqAppKey, apliiqSharedSecret, resendApiKey } from '../config/secrets.js';
 
 /**
  * Gets an environment variable and throws if missing
@@ -36,9 +36,9 @@ export const config = {
   
   // Resend Email Configuration
   resend: {
-    apiKey: getEnvVar('RESEND_API_KEY', false),
+    apiKey: getSecretValue(resendApiKey, 'RESEND_API_KEY'),
     fromEmail: getEnvVar('RESEND_FROM_EMAIL', false) || 'hello@9thform.com',
-    fromName: 'thform',
+    fromName: '9thform',
   },
   
   // Site Configuration

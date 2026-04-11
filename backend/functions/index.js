@@ -18,6 +18,7 @@ import {
   stripeWebhookSecret,
   apliiqAppKey,
   apliiqSharedSecret,
+  resendApiKey,
 } from './config/secrets.js';
 
 const frontendUrl = defineString('FRONTEND_URL', { default: 'https://9thform.com' });
@@ -69,7 +70,7 @@ app.use((err, req, res, next) => {
 // Export as Firebase Function
 export const api = onRequest(
   {
-    secrets: [firebasePrivateKey, stripeSecretKey, stripeWebhookSecret, apliiqAppKey, apliiqSharedSecret],
+    secrets: [firebasePrivateKey, stripeSecretKey, stripeWebhookSecret, apliiqAppKey, apliiqSharedSecret, resendApiKey],
     region: 'us-central1',
   },
   app
