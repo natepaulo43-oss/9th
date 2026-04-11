@@ -26,7 +26,10 @@ const stripeRouter = createStripeRouter({
 });
 
 app.use(cors({ origin: true, credentials: true }));
-app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
+app.use('/stripe/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
+  req.rawBody = req.body; // Buffer from express.raw, needed for Stripe signature verification
+  next();
+});
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 

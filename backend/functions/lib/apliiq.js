@@ -69,8 +69,22 @@ function generateApliiqAuthHeader(appKey, sharedSecret, timestamp, nonce, payloa
   hmac.update(stringToSign);
   const signature = hmac.digest('base64');
   
-  // Return format: RTS:SIG:APPID:STATE
+  // Return format: RTS:SIG:APPID:STATE (caller prepends the scheme name)
   return `${timestamp}:${signature}:${appKey}:${nonce}`;
+}
+
+/**
+ * Converts a Firestore string ID to a stable unsigned 32-bit integer.
+ * Apliiq's API docs show numeric values for `number` and `order_number`.
+ * @param {string} strId
+ * @returns {number}
+ */
+function toNumericOrderId(strId) {
+  let hash = 0;
+  for (let i = 0; i < strId.length; i++) {
+    hash = (hash * 31 + strId.charCodeAt(i)) >>> 0; // keep unsigned 32-bit
+  }
+  return hash;
 }
 
 /**
@@ -107,7 +121,7 @@ async function apliiqRequest(method, path, payload = {}) {
   const headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'x-apliiq-auth': authHeader,
+    'Authorization': `x-apliiq-auth ${authHeader}`,
   };
   
   console.log(`[Apliiq API] ${method} ${path}`, {
@@ -122,13 +136,13 @@ async function apliiqRequest(method, path, payload = {}) {
   console.log('[Apliiq API] EXACT REQUEST HEADERS:', {
     'Content-Type': headers['Content-Type'],
     'Accept': headers['Accept'],
-    'x-apliiq-auth': authHeader, // Full auth header value
+    'Authorization': headers['Authorization'],
   });
   
   console.log('[Apliiq API] Auth Header Breakdown:', {
-    headerName: 'x-apliiq-auth',
-    headerValue: authHeader,
-    format: 'RTS:SIG:APPID:STATE',
+    headerName: 'Authorization',
+    scheme: 'x-apliiq-auth',
+    format: 'x-apliiq-auth RTS:SIG:APPID:STATE',
     parts: {
       RTS: authHeader.split(':')[0],
       SIG: authHeader.split(':')[1]?.substring(0, 20) + '...',
@@ -267,11 +281,12 @@ function convertOrderToApliiqFormat(order) {
   
   // Build Apliiq order payload per their API specification
   const orderId = order.id || order.stripeSessionId;
+  const numericId = toNumericOrderId(orderId);
   const payload = {
     id: orderId,
-    number: orderId,
-    name: `#${orderId}`,
-    order_number: orderId,
+    number: numericId,
+    name: `#${numericId}`,
+    order_number: numericId,
     email: order.customerEmail || '',
     line_items: lineItems,
     shipping_address: apliiqShippingAddress,
