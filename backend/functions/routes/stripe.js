@@ -246,7 +246,7 @@ const createStripeRouter = ({
 
           {
 
-            shipping_rate: 'shr_1TH7HKGxmarJfmGor8SAJggv',
+            shipping_rate: 'shr_1TKsRVGxmarJfmGo8H92gMWE',
 
           },
 
