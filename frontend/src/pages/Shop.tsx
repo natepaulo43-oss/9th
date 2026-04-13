@@ -82,13 +82,14 @@ const Shop: React.FC = () => {
     {
       id: 'prod_UFcE8PRgn7qBzR',
       name: 'Phased Motion Tee',
-      description: 'Built for movement, designed for momentum. Progression without pause. Made from 100% organic cotton, it carries a substantial feel with a soft, worn-in finish. Minimal at a distance, precise up close. Boxy, cropped fit. 7.5 oz Heavyweight cotton. Soft, structured feel.',
+      description: 'Oversized Fit. Order your normal size.\nBuilt for movement, designed for momentum. Progression without pause. Made from 100% organic cotton, it carries a substantial feel with a soft, worn-in finish. Minimal at a distance, precise up close. Boxy, cropped fit. 7.5 oz Heavyweight cotton. Soft, structured feel.',
       price: 3199,
       currency: 'usd',
       image: '/images/shirt mockup.jpg',
       images: [
         '/images/shirt mockup.jpg',
         '/images/Screenshot 2026-03-31 142435.png',
+        '/images/image0 (1).jpeg',
       ],
     },
   ];
