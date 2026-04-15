@@ -88,7 +88,7 @@ const Shop: React.FC = () => {
       image: '/images/shirt mockup.jpg',
       images: [
         '/images/shirt mockup.jpg',
-        '/images/Screenshot 2026-03-31 142435.png',
+        '/images/Chart_588.png',
         '/images/image0 (1).jpeg',
       ],
     },

@@ -29,13 +29,28 @@ let stripeRouter = null;
 
 app.use(securityHeaders);
 app.use(cors({ origin: true, credentials: true }));
-app.use('/stripe/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
-  req.rawBody = req.body; // Buffer from express.raw, needed for Stripe signature verification
-  next();
+app.use('/stripe/webhook', (req, res, next) => {
+  // Firebase Functions v2 automatically provides req.rawBody as a Buffer.
+  // Only fall back to express.raw() for local dev where rawBody isn't pre-set.
+  if (req.rawBody) {
+    return next();
+  }
+  express.raw({ type: 'application/json' })(req, res, (err) => {
+    if (err) return next(err);
+    req.rawBody = req.body;
+    next();
+  });
 });
-app.use('/webhooks/apliiq', express.raw({ type: 'application/json' }), (req, res, next) => {
-  req.rawBody = req.body; // Buffer from express.raw, needed for Apliiq signature verification
-  next();
+app.use('/webhooks/apliiq', (req, res, next) => {
+  // Firebase Functions v2 automatically provides req.rawBody as a Buffer.
+  if (req.rawBody) {
+    return next();
+  }
+  express.raw({ type: 'application/json' })(req, res, (err) => {
+    if (err) return next(err);
+    req.rawBody = req.body;
+    next();
+  });
 });
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }));

@@ -32,11 +32,11 @@ export const APLIIQ_SKU_MAPPINGS = {
   'Phased Motion Tee': {
     productName: 'Phased Motion Tee',
     skus: {
-      'S': 'APQ-5791962S6A1',
-      'M': 'APQ-5791962S7A1',
-      'L': 'APQ-5791962S8A1',
-      'XL': 'APQ-5791962S1A1',
-      'XXL': 'APQ-5791962S2A1',
+      'S': 'APQ-5819565S6A1',
+      'M': 'APQ-5819565S7A1',
+      'L': 'APQ-5819565S8A1',
+      'XL': 'APQ-5819565S1A1',
+      'XXL': 'APQ-5819565S2A1',
     },
   },
 };
