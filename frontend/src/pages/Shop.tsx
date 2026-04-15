@@ -1,28 +1,9 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useCart } from '../context/CartContext';
+import { products, formatCurrency, APPAREL_SIZES, Product } from '../data/products';
 import './Shop.css';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number; // stored in cents for currency-safe math
-  currency?: string;
-  image: string;
-  images?: string[];
-}
-
-interface CartItem {
-  product: Product;
-  quantity: number;
-  size?: string;
-}
-
-const formatCurrency = (value: number, currency: string = 'usd') =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-  }).format(value / 100);
 
 const resolveApiBaseUrl = () => {
   if (typeof window === 'undefined') {
@@ -45,54 +26,12 @@ const buildApiUrl = (path: string) => {
 
 const Shop: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<Record<string, number>>({});
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [sizeModalProduct, setSizeModalProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('');
 
-  const products: Product[] = [
-    {
-      id: 'prod_TRRTgFMRWW7OZS',
-      name: 'Canvas 9thform Skate Hat',
-      description: 'Premium canvas surf style hat with iconic 9thform skate logo. Designed for comfort and style. ',
-      price: 3499,
-      currency: 'usd',
-      image: '/images/skatecap.PNG',
-      images: [
-        '/images/skatecap.PNG',
-        '/images/behind_hat.JPG',
-        '/images/treehat.jpg',
-        '/images/IMG_2415.jpg',
-        '/images/MAX05476.jpg',
-      ],
-    },
-    {
-      id: 'prod_TRRUrKA3MQ9fay',
-      name: 'Canvas 9thform Falling Guy Hat',
-      description: 'Premium canvas surf hat with 9thform Falling Guy logo. Designed for comfort and style.',
-      price: 3499,
-      currency: 'usd',
-      image: '/images/aspect_white.png',
-      images: [
-        '/images/aspect_white.png',
-        '/images/Thrown.JPG',
-      ],
-    },
-    {
-      id: 'prod_UFcE8PRgn7qBzR',
-      name: 'Phased Motion Tee',
-      description: 'Oversized Fit. Order your normal size.\nBuilt for movement, designed for momentum. Progression without pause. Made from 100% organic cotton, it carries a substantial feel with a soft, worn-in finish. Minimal at a distance, precise up close. Boxy, cropped fit. 7.5 oz Heavyweight cotton. Soft, structured feel.',
-      price: 3199,
-      currency: 'usd',
-      image: '/images/shirt mockup.jpg',
-      images: [
-        '/images/shirt mockup.jpg',
-        '/images/Chart_588.png',
-        '/images/image0 (1).jpeg',
-      ],
-    },
-  ];
+  const { cartItems, addToCart, removeFromCart, updateQuantity, cartCount, cartTotal } = useCart();
 
   const getCurrentImage = (product: Product): string => {
     if (product.images && selectedImage[product.id] !== undefined) {
@@ -103,26 +42,13 @@ const Shop: React.FC = () => {
 
   const handleAddToCart = (product: Product, size?: string) => {
     // Check if product requires size selection
-    if (product.name === 'Phased Motion Tee' && !size) {
+    if (product.category === 'apparel' && !size) {
       setSizeModalProduct(product);
       setSelectedSize('');
       return;
     }
 
-    setCartItems((prev) => {
-      const existing = prev.find((item) => 
-        item.product.id === product.id && 
-        (size ? item.size === size : !item.size)
-      );
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id && (size ? item.size === size : !item.size)
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [...prev, { product, quantity: 1, size }];
-    });
+    addToCart(product, size);
   };
 
   const handleSizeSelection = (size: string) => {
@@ -132,28 +58,6 @@ const Shop: React.FC = () => {
       setSelectedSize('');
     }
   };
-
-  const handleRemoveFromCart = (productId: string, size?: string) => {
-    setCartItems((prev) => prev.filter((item) => 
-      !(item.product.id === productId && (size ? item.size === size : !item.size))
-    ));
-  };
-
-  const updateQuantity = (productId: string, delta: number, size?: string) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.product.id === productId && (size ? item.size === size : !item.size)
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item
-      )
-    );
-  };
-
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotal = cartItems.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
 
   const handleCheckout = async () => {
     if (!cartItems.length) return;
@@ -229,35 +133,39 @@ const Shop: React.FC = () => {
                 transition={{ delay: index * 0.2, duration: 0.6 }}
                 whileHover={{ y: -5 }}
               >
-                <div className="product-image-container">
-                  <div className="product-image-frame">
-                    <img
-                      src={getCurrentImage(product)}
-                      alt={product.name}
-                      className={`product-image ${getCurrentImage(product).includes('Screenshot') || getCurrentImage(product).includes('size') ? 'size-chart-image' : ''}`}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/images/logo1.png';
-                      }}
-                    />
-                  </div>
-                  {product.images && product.images.length > 1 && (
-                    <div className="image-thumbnails">
-                      {product.images.map((img, imgIndex) => (
-                        <button
-                          key={imgIndex}
-                          className={`thumbnail ${selectedImage[product.id] === imgIndex ? 'active' : ''}`}
-                          onClick={() => setSelectedImage({ ...selectedImage, [product.id]: imgIndex })}
-                        >
-                          <img src={img} alt={`${product.name} view ${imgIndex + 1}`} />
-                        </button>
-                      ))}
+                <Link to={`/product/${product.id}`} className="product-card-link">
+                  <div className="product-image-container">
+                    <div className="product-image-frame">
+                      <img
+                        src={getCurrentImage(product)}
+                        alt={product.name}
+                        className={`product-image ${getCurrentImage(product).includes('Screenshot') || getCurrentImage(product).includes('size') ? 'size-chart-image' : ''}`}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/images/logo1.png';
+                        }}
+                      />
                     </div>
-                  )}
-                </div>
+                  </div>
+                </Link>
+                {product.images && product.images.length > 1 && (
+                  <div className="image-thumbnails-row">
+                    {product.images.map((img, imgIndex) => (
+                      <button
+                        key={imgIndex}
+                        className={`thumbnail ${selectedImage[product.id] === imgIndex ? 'active' : ''}`}
+                        onClick={() => setSelectedImage({ ...selectedImage, [product.id]: imgIndex })}
+                      >
+                        <img src={img} alt={`${product.name} view ${imgIndex + 1}`} />
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 <div className="product-info">
-                  <h2 className="product-name">{product.name}</h2>
+                  <Link to={`/product/${product.id}`} className="product-name-link">
+                    <h2 className="product-name">{product.name}</h2>
+                  </Link>
                   <p className="product-description">{product.description}</p>
                   <div className="product-footer">
                     <span className="product-price">{formatCurrency(product.price, product.currency)}</span>
@@ -300,7 +208,7 @@ const Shop: React.FC = () => {
                       </h3>
                       <button
                         className="remove-item"
-                        onClick={() => handleRemoveFromCart(item.product.id, item.size)}
+                        onClick={() => removeFromCart(item.product.id, item.size)}
                         aria-label={`Remove ${item.product.name}`}
                       >
                         remove
@@ -367,7 +275,7 @@ const Shop: React.FC = () => {
             <h3>Select Size</h3>
             <p className="size-modal-product">{sizeModalProduct.name}</p>
             <div className="size-options">
-              {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+              {APPAREL_SIZES.map((size) => (
                 <button
                   key={size}
                   className={`size-button ${selectedSize === size ? 'selected' : ''}`}

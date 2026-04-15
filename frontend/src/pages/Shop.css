@@ -324,6 +324,36 @@
   border-radius: 4px;
 }
 
+.image-thumbnails-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0;
+  justify-content: center;
+}
+
+.product-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-card-link:hover {
+  opacity: 1;
+}
+
+.product-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-name-link:hover {
+  opacity: 1;
+}
+
+.product-name-link:hover .product-name {
+  opacity: 0.8;
+}
+
 .thumbnail {
   width: 50px;
   height: 50px;

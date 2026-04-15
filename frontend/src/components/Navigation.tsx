@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCart } from '../context/CartContext';
 
 const Navigation: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { cartCount } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,16 +50,21 @@ const Navigation: React.FC = () => {
           ))}
         </ul>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="mobile-menu-button"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          <span className={isMobileMenuOpen ? 'open' : ''}></span>
-          <span className={isMobileMenuOpen ? 'open' : ''}></span>
-          <span className={isMobileMenuOpen ? 'open' : ''}></span>
-        </button>
+        {/* Cart + Mobile Menu Button */}
+        <div className="nav-right">
+          <Link to="/shop" className="nav-cart-link" aria-label="Cart">
+            Cart{cartCount > 0 && <span className="nav-cart-badge">{cartCount}</span>}
+          </Link>
+          <button
+            className="mobile-menu-button"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className={isMobileMenuOpen ? 'open' : ''}></span>
+            <span className={isMobileMenuOpen ? 'open' : ''}></span>
+            <span className={isMobileMenuOpen ? 'open' : ''}></span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
