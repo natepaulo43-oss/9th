@@ -484,6 +484,7 @@
   .product-footer {
     flex-direction: column;
     align-items: stretch;
+    gap: 1rem;
   }
 
   .add-to-cart-button {

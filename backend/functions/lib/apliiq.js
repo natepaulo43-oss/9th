@@ -196,6 +196,7 @@ function convertOrderToApliiqFormat(order) {
     // Get product details from the catalog
     const productName = item.product?.name || item.productName;
     const size = item.size || item.variant || 'ONE_SIZE';
+    const color = item.color || null;
     const quantity = item.quantity || 1;
     const priceInCents = item.price || item.product?.price || 0;
     
@@ -203,11 +204,12 @@ function convertOrderToApliiqFormat(order) {
       throw new Error(`Line item missing product name: ${JSON.stringify(item)}`);
     }
     
-    // Look up Apliiq SKU
-    const apliiqSku = getApliiqSku(productName, size);
+    // Look up Apliiq SKU with color support
+    const apliiqSku = getApliiqSku(productName, size, color);
     
     if (!apliiqSku) {
-      throw new Error(`No Apliiq SKU mapping found for ${productName} (size: ${size})`);
+      const colorInfo = color ? ` (color: ${color})` : '';
+      throw new Error(`No Apliiq SKU mapping found for ${productName} (size: ${size})${colorInfo}`);
     }
     
     // Convert price from cents to dollars (must be a number, not a string)

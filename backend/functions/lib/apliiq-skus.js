@@ -32,22 +32,32 @@ export const APLIIQ_SKU_MAPPINGS = {
   'Phased Motion Tee': {
     productName: 'Phased Motion Tee',
     skus: {
-      'S': 'APQ-5819565S6A1',
-      'M': 'APQ-5819565S7A1',
-      'L': 'APQ-5819565S8A1',
-      'XL': 'APQ-5819565S1A1',
-      'XXL': 'APQ-5819565S2A1',
+      'cream': {
+        'S': 'APQ-5819565S6A1',
+        'M': 'APQ-5819565S7A1',
+        'L': 'APQ-5819565S8A1',
+        'XL': 'APQ-5819565S1A1',
+        'XXL': 'APQ-5819565S2A1',
+      },
+      'white': {
+        'S': 'APQ-5819567S6A1',
+        'M': 'APQ-5819567S7A1',
+        'L': 'APQ-5819567S8A1',
+        'XL': 'APQ-5819567S1A1',
+        'XXL': 'APQ-5819567S2A1',
+      },
     },
   },
 };
 
 /**
- * Gets the Apliiq SKU for a given product and size
+ * Gets the Apliiq SKU for a given product, size, and color
  * @param {string} productName - Name of the product
  * @param {string} size - Size variant (S, M, L, XL, XXL, ONE_SIZE)
+ * @param {string} color - Color variant (e.g., 'cream', 'white')
  * @returns {string|null} Apliiq SKU or null if not found
  */
-export function getApliiqSku(productName, size = 'ONE_SIZE') {
+export function getApliiqSku(productName, size = 'ONE_SIZE', color = null) {
   const mapping = APLIIQ_SKU_MAPPINGS[productName];
   
   if (!mapping) {
@@ -56,6 +66,18 @@ export function getApliiqSku(productName, size = 'ONE_SIZE') {
   }
   
   const normalizedSize = size?.toUpperCase() || 'ONE_SIZE';
+  
+  // Check if product has color variants
+  if (color && mapping.skus[color]) {
+    const sku = mapping.skus[color][normalizedSize];
+    if (!sku) {
+      console.error(`No Apliiq SKU found for product: ${productName}, color: ${color}, size: ${normalizedSize}`);
+      return null;
+    }
+    return sku;
+  }
+  
+  // Fallback to direct size mapping (for products without color variants)
   const sku = mapping.skus[normalizedSize];
   
   if (!sku) {
@@ -68,7 +90,7 @@ export function getApliiqSku(productName, size = 'ONE_SIZE') {
 
 /**
  * Validates that all line items have valid Apliiq SKUs
- * @param {Array<{productName: string, size?: string}>} lineItems
+ * @param {Array<{productName: string, size?: string, color?: string}>} lineItems
  * @returns {{valid: boolean, errors: string[]}}
  */
 export function validateLineItems(lineItems) {
@@ -80,21 +102,19 @@ export function validateLineItems(lineItems) {
   }
   
   lineItems.forEach((item, index) => {
-    const { productName, size } = item;
+    const { productName, size, color } = item;
     
     if (!productName) {
       errors.push(`Line item ${index + 1}: Missing product name`);
       return;
     }
     
-    const sku = getApliiqSku(productName, size);
+    const sku = getApliiqSku(productName, size, color);
     if (!sku) {
-      errors.push(`Line item ${index + 1}: No SKU mapping for ${productName} (size: ${size || 'ONE_SIZE'})`);
+      const colorInfo = color ? `, color: ${color}` : '';
+      errors.push(`Line item ${index + 1}: No SKU mapping for ${productName} (size: ${size || 'ONE_SIZE'}${colorInfo})`);
     }
   });
   
-  return {
-    valid: errors.length === 0,
-    errors,
-  };
+  return { valid: errors.length === 0, errors };
 }

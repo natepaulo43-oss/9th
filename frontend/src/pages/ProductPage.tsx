@@ -14,20 +14,26 @@ const ProductPage: React.FC = () => {
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
   const imgRef = React.useRef<HTMLImageElement>(null);
 
-  const images = product?.images && product.images.length > 0 ? product.images : [product?.image || ''];
-  const currentImage = images[selectedImageIndex] || product?.image || '';
+  const activeColorVariant = product?.colorVariants?.find(v => v.color === selectedColor);
+  const images = activeColorVariant?.images || (product?.images && product.images.length > 0 ? product.images : [product?.image || '']);
+  const currentImage = images?.[selectedImageIndex] || product?.image || '';
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
+    if (product?.colorVariants && product.colorVariants.length > 0) {
+      setSelectedColor(product.colorVariants[0].color);
+    }
+  }, [id, product]);
 
   useEffect(() => {
     setImageAspectRatio(null);
-  }, [currentImage]);
+    setSelectedImageIndex(0);
+  }, [selectedColor]);
 
   if (!product) {
     return (
@@ -52,7 +58,8 @@ const ProductPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (requiresSize && !selectedSize) return;
-    addToCart(product, requiresSize ? selectedSize : undefined);
+    if (product.colorVariants && product.colorVariants.length > 0 && !selectedColor) return;
+    addToCart(product, requiresSize ? selectedSize : undefined, selectedColor || undefined);
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 1500);
   };
@@ -96,7 +103,7 @@ const ProductPage: React.FC = () => {
                 }}
               />
             </div>
-            {images.length > 1 && (
+            {images && images.length > 1 && (
               <div className="product-page-thumbnails">
                 {images.map((img, index) => (
                   <button
@@ -128,6 +135,24 @@ const ProductPage: React.FC = () => {
               ))}
             </div>
 
+            {/* Color Selector — only for products with color variants */}
+            {product.colorVariants && product.colorVariants.length > 0 && (
+              <div className="product-page-size-section">
+                <p className="product-page-size-label">Select Color</p>
+                <div className="product-page-size-options">
+                  {product.colorVariants.map((variant) => (
+                    <button
+                      key={variant.color}
+                      className={`product-page-size-btn ${selectedColor === variant.color ? 'selected' : ''}`}
+                      onClick={() => setSelectedColor(variant.color)}
+                    >
+                      {variant.displayName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Size Selector — only for apparel */}
             {requiresSize && (
               <div className="product-page-size-section">
@@ -150,7 +175,7 @@ const ProductPage: React.FC = () => {
             <button
               className={`product-page-add-to-cart ${addedFeedback ? 'added' : ''}`}
               onClick={handleAddToCart}
-              disabled={requiresSize && !selectedSize}
+              disabled={(requiresSize && !selectedSize) || (product.colorVariants && product.colorVariants.length > 0 && !selectedColor)}
             >
               {addedFeedback ? 'Added to Cart' : 'Add to Cart'}
             </button>

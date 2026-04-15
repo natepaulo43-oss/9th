@@ -192,6 +192,8 @@ const createStripeRouter = ({
 
           size: item.size || undefined,
 
+          color: item.color || undefined,
+
           product: catalogEntry,
 
         };
@@ -262,10 +264,11 @@ const createStripeRouter = ({
 
           cart: JSON.stringify(
 
-            sanitizedItems.map(({ productId, quantity, size, product }) => ({ 
+            sanitizedItems.map(({ productId, quantity, size, color, product }) => ({ 
               productId, 
               quantity,
               size,
+              color,
               productName: product.name,
               price: product.price
             }))

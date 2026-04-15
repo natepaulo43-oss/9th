@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import './Navigation.css';
 
 const Navigation: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -23,6 +24,17 @@ const Navigation: React.FC = () => {
     { path: '/about', label: 'About' },
     { path: '/contact', label: 'Contact' },
   ];
+
+  const handleCartClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // If on mobile and already on shop page, scroll to cart instead of navigating
+    if (window.innerWidth <= 768 && location.pathname === '/shop') {
+      e.preventDefault();
+      const cartPanel = document.querySelector('.cart-panel');
+      if (cartPanel) {
+        cartPanel.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <motion.nav
@@ -52,8 +64,9 @@ const Navigation: React.FC = () => {
 
         {/* Cart + Mobile Menu Button */}
         <div className="nav-right">
-          <Link to="/shop" className="nav-cart-link" aria-label="Cart">
-            Cart{cartCount > 0 && <span className="nav-cart-badge">{cartCount}</span>}
+          <Link to="/shop" className="nav-cart-link" aria-label="Cart" onClick={handleCartClick}>
+            CART
+            {cartCount > 0 && <span className="nav-cart-indicator">{cartCount}</span>}
           </Link>
           <button
             className="mobile-menu-button"

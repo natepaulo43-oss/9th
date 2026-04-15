@@ -30,32 +30,73 @@ const Shop: React.FC = () => {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [sizeModalProduct, setSizeModalProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
 
   const { cartItems, addToCart, removeFromCart, updateQuantity, cartCount, cartTotal } = useCart();
 
-  const getCurrentImage = (product: Product): string => {
-    if (product.images && selectedImage[product.id] !== undefined) {
-      return product.images[selectedImage[product.id]];
+  const getAllImages = (product: Product): string[] => {
+    if (product.colorVariants && product.colorVariants.length > 0) {
+      // Collect all unique images from all color variants
+      const allImages: string[] = [];
+      product.colorVariants.forEach(variant => {
+        if (variant.images) {
+          variant.images.forEach(img => {
+            if (!allImages.includes(img)) {
+              allImages.push(img);
+            }
+          });
+        }
+      });
+      // Sort size chart images to the end
+      return allImages.sort((a, b) => {
+        const aIsSizeChart = a.includes('Screenshot') || a.includes('Chart') || a.includes('size');
+        const bIsSizeChart = b.includes('Screenshot') || b.includes('Chart') || b.includes('size');
+        if (aIsSizeChart && !bIsSizeChart) return 1;
+        if (!aIsSizeChart && bIsSizeChart) return -1;
+        return 0;
+      });
     }
-    return product.image;
+    // Also sort for products without color variants
+    const images = product.images || [product.image];
+    return images.sort((a, b) => {
+      const aIsSizeChart = a.includes('Screenshot') || a.includes('Chart') || a.includes('size');
+      const bIsSizeChart = b.includes('Screenshot') || b.includes('Chart') || b.includes('size');
+      if (aIsSizeChart && !bIsSizeChart) return 1;
+      if (!aIsSizeChart && bIsSizeChart) return -1;
+      return 0;
+    });
   };
 
-  const handleAddToCart = (product: Product, size?: string) => {
+  const getCurrentImage = (product: Product): string => {
+    const images = getAllImages(product);
+    if (selectedImage[product.id] !== undefined) {
+      return images[selectedImage[product.id]];
+    }
+    return images[0];
+  };
+
+  const handleAddToCart = (product: Product, size?: string, color?: string) => {
     // Check if product requires size selection
     if (product.category === 'apparel' && !size) {
       setSizeModalProduct(product);
       setSelectedSize('');
+      setSelectedColor('');
       return;
     }
 
-    addToCart(product, size);
+    addToCart(product, size, color);
   };
 
-  const handleSizeSelection = (size: string) => {
-    if (sizeModalProduct) {
-      handleAddToCart(sizeModalProduct, size);
+  const handleSizeSelection = () => {
+    if (sizeModalProduct && selectedSize) {
+      // Check if product has color variants and color is required
+      if (sizeModalProduct.colorVariants && sizeModalProduct.colorVariants.length > 0 && !selectedColor) {
+        return; // Don't add to cart if color is required but not selected
+      }
+      handleAddToCart(sizeModalProduct, selectedSize, selectedColor || undefined);
       setSizeModalProduct(null);
       setSelectedSize('');
+      setSelectedColor('');
     }
   };
 
@@ -75,6 +116,7 @@ const Shop: React.FC = () => {
             productId: item.product.id,
             quantity: item.quantity,
             size: item.size,
+            color: item.color,
           })),
         }),
       });
@@ -139,7 +181,7 @@ const Shop: React.FC = () => {
                       <img
                         src={getCurrentImage(product)}
                         alt={product.name}
-                        className={`product-image ${getCurrentImage(product).includes('Screenshot') || getCurrentImage(product).includes('size') ? 'size-chart-image' : ''}`}
+                        className={`product-image ${getCurrentImage(product).includes('Screenshot') || getCurrentImage(product).includes('Chart') || getCurrentImage(product).includes('size') ? 'size-chart-image' : ''}`}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/images/logo1.png';
@@ -148,19 +190,22 @@ const Shop: React.FC = () => {
                     </div>
                   </div>
                 </Link>
-                {product.images && product.images.length > 1 && (
-                  <div className="image-thumbnails-row">
-                    {product.images.map((img, imgIndex) => (
-                      <button
-                        key={imgIndex}
-                        className={`thumbnail ${selectedImage[product.id] === imgIndex ? 'active' : ''}`}
-                        onClick={() => setSelectedImage({ ...selectedImage, [product.id]: imgIndex })}
-                      >
-                        <img src={img} alt={`${product.name} view ${imgIndex + 1}`} />
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {(() => {
+                  const allImages = getAllImages(product);
+                  return allImages.length > 1 && (
+                    <div className="image-thumbnails-row">
+                      {allImages.map((img, imgIndex) => (
+                        <button
+                          key={imgIndex}
+                          className={`thumbnail ${selectedImage[product.id] === imgIndex ? 'active' : ''}`}
+                          onClick={() => setSelectedImage({ ...selectedImage, [product.id]: imgIndex })}
+                        >
+                          <img src={img} alt={`${product.name} view ${imgIndex + 1}`} />
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 <div className="product-info">
                   <Link to={`/product/${product.id}`} className="product-name-link">
@@ -171,9 +216,19 @@ const Shop: React.FC = () => {
                     <span className="product-price">{formatCurrency(product.price, product.currency)}</span>
                     <button
                       className="add-to-cart-button"
-                      onClick={() => handleAddToCart(product)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAddToCart(product);
+                        // Scroll to cart on mobile
+                        if (window.innerWidth <= 768) {
+                          const cartPanel = document.querySelector('.cart-panel');
+                          if (cartPanel) {
+                            cartPanel.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }
+                      }}
                     >
-                      ADD TO CART
+                      Add to Cart
                     </button>
                   </div>
                 </div>
@@ -196,7 +251,7 @@ const Shop: React.FC = () => {
               <p className="empty-cart">Your cart is empty. Add a piece of 9thform to get started.</p>
             ) : (
               cartItems.map((item, idx) => (
-                <div className="cart-item" key={`${item.product.id}-${item.size || 'no-size'}-${idx}`}>
+                <div className="cart-item" key={`${item.product.id}-${item.size || 'no-size'}-${item.color || 'no-color'}-${idx}`}>
                   <div className="cart-item-thumb">
                     <img src={item.product.image} alt={item.product.name} />
                   </div>
@@ -204,11 +259,12 @@ const Shop: React.FC = () => {
                     <div className="cart-item-header">
                       <h3 className="cart-item-name">
                         {item.product.name}
+                        {item.color && <span style={{ fontSize: '0.9em', opacity: 0.7, marginLeft: '8px', textTransform: 'capitalize' }}>({item.color})</span>}
                         {item.size && <span style={{ fontSize: '0.9em', opacity: 0.7, marginLeft: '8px' }}>({item.size})</span>}
                       </h3>
                       <button
                         className="remove-item"
-                        onClick={() => removeFromCart(item.product.id, item.size)}
+                        onClick={() => removeFromCart(item.product.id, item.size, item.color)}
                         aria-label={`Remove ${item.product.name}`}
                       >
                         remove
@@ -220,7 +276,7 @@ const Shop: React.FC = () => {
                     <div className="cart-item-controls">
                       <div className="quantity-pill">
                         <button
-                          onClick={() => updateQuantity(item.product.id, -1, item.size)}
+                          onClick={() => updateQuantity(item.product.id, -1, item.size, item.color)}
                           disabled={item.quantity === 1}
                           aria-label={`Decrease quantity for ${item.product.name}`}
                         >
@@ -228,7 +284,7 @@ const Shop: React.FC = () => {
                         </button>
                         <span>{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, 1, item.size)}
+                          onClick={() => updateQuantity(item.product.id, 1, item.size, item.color)}
                           aria-label={`Increase quantity for ${item.product.name}`}
                         >
                           +
@@ -272,8 +328,30 @@ const Shop: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
           >
-            <h3>Select Size</h3>
+            <h3>Select Options</h3>
             <p className="size-modal-product">{sizeModalProduct.name}</p>
+            
+            {/* Color Selection */}
+            {sizeModalProduct.colorVariants && sizeModalProduct.colorVariants.length > 0 && (
+              <>
+                <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', fontWeight: '500' }}>Color</h4>
+                <div className="size-options">
+                  {sizeModalProduct.colorVariants.map((variant) => (
+                    <button
+                      key={variant.color}
+                      className={`size-button ${selectedColor === variant.color ? 'selected' : ''}`}
+                      onClick={() => setSelectedColor(variant.color)}
+                      style={{ textTransform: 'capitalize' }}
+                    >
+                      {variant.displayName}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            
+            {/* Size Selection */}
+            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', fontWeight: '500' }}>Size</h4>
             <div className="size-options">
               {APPAREL_SIZES.map((size) => (
                 <button
@@ -288,14 +366,18 @@ const Shop: React.FC = () => {
             <div className="size-modal-actions">
               <button 
                 className="size-modal-cancel"
-                onClick={() => setSizeModalProduct(null)}
+                onClick={() => {
+                  setSizeModalProduct(null);
+                  setSelectedSize('');
+                  setSelectedColor('');
+                }}
               >
                 Cancel
               </button>
               <button 
                 className="size-modal-confirm"
-                onClick={() => selectedSize && handleSizeSelection(selectedSize)}
-                disabled={!selectedSize}
+                onClick={handleSizeSelection}
+                disabled={!selectedSize || (sizeModalProduct.colorVariants && sizeModalProduct.colorVariants.length > 0 && !selectedColor)}
               >
                 Add to Cart
               </button>
