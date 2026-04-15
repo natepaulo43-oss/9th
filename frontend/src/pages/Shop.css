@@ -456,25 +456,44 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .shop-page {
-    padding: 100px 1.5rem 3rem;
+    padding: 100px 1rem 3rem;
   }
 
   .shop-content {
     flex-direction: column;
+    gap: 2rem;
   }
 
   .cart-panel {
     width: 100%;
     position: static;
+    order: 2;
+  }
+
+  .products-section {
+    order: 1;
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 
   .shop-header {
-    margin-bottom: 3rem;
+    margin-bottom: 2.5rem;
+    padding: 0 0.5rem;
   }
 
   .products-container {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 2.5rem;
+    max-width: 100%;
+    padding: 0;
+    justify-items: center;
+    width: 100%;
+  }
+
+  .product-card {
+    max-width: 400px;
+    width: 100%;
   }
 
   .product-info {
@@ -490,20 +509,39 @@
   .add-to-cart-button {
     width: 100%;
     text-align: center;
+    padding: 1rem 2rem;
+  }
+
+  .image-thumbnails-row {
+    padding: 0.75rem 0.75rem 0;
   }
 }
 
 @media (max-width: 480px) {
   .shop-page {
-    padding: 90px 1rem 2rem;
+    padding: 90px 0.75rem 2rem;
+  }
+
+  .shop-header {
+    margin-bottom: 2rem;
+    padding: 0 0.25rem;
   }
 
   .products-container {
     gap: 2rem;
+    max-width: 100%;
+    justify-items: center;
+    width: 100%;
+  }
+
+  .product-card {
+    max-width: 360px;
+    width: 100%;
+    border-radius: 12px;
   }
 
   .product-info {
-    padding: 1.25rem;
+    padding: 1rem;
   }
 
   .product-name {
@@ -512,6 +550,20 @@
 
   .product-price {
     font-size: 1.25rem;
+  }
+
+  .product-description {
+    font-size: 0.9rem;
+  }
+
+  .add-to-cart-button {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.8rem;
+  }
+
+  .thumbnail {
+    width: 45px;
+    height: 45px;
   }
 }
 

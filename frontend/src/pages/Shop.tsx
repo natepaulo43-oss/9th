@@ -219,13 +219,6 @@ const Shop: React.FC = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         handleAddToCart(product);
-                        // Scroll to cart on mobile
-                        if (window.innerWidth <= 768) {
-                          const cartPanel = document.querySelector('.cart-panel');
-                          if (cartPanel) {
-                            cartPanel.scrollIntoView({ behavior: 'smooth' });
-                          }
-                        }
                       }}
                     >
                       Add to Cart
