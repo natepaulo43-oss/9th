@@ -25,9 +25,6 @@ const ProductPage: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (product?.colorVariants && product.colorVariants.length > 0) {
-      setSelectedColor(product.colorVariants[0].color);
-    }
   }, [id, product]);
 
   useEffect(() => {
