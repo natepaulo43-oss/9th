@@ -53,11 +53,13 @@ export const products: Product[] = [
     description: 'Oversized Fit. Order your normal size.\nBuilt for movement, designed for momentum. Progression without pause. Made from 100% organic cotton, it carries a substantial feel with a soft, worn-in finish. Minimal at a distance, precise up close. Boxy, cropped fit. 7.5 oz Heavyweight cotton. Soft, structured feel.',
     price: 3199,
     currency: 'usd',
-    image: '/images/images/cream-garment.jpg',
+    image: '/images/image0 (1).jpeg',
     images: [
       '/images/image0 (1).jpeg',
       '/images/images/Tezza-9729.jpg',
       '/images/images/cream-garment.jpg',
+      '/images/images/white-garment.jpg',
+      '/images/images/5823543_7382_590_900.jpg',
       '/images/Screenshot 2026-04-14 231425.png',
     ],
     category: 'apparel',
@@ -69,7 +71,6 @@ export const products: Product[] = [
         images: [
           '/images/images/cream-garment.jpg',
           '/images/image0 (1).jpeg',
-          '/images/images/Tezza-9729.jpg',
           '/images/Screenshot 2026-04-14 231425.png',
         ],
       },
@@ -80,7 +81,6 @@ export const products: Product[] = [
         images: [
           '/images/images/white-garment.jpg',
           '/images/image0 (1).jpeg',
-          '/images/images/Tezza-9729.jpg',
           '/images/Screenshot 2026-04-14 231425.png',
         ],
       },
@@ -90,7 +90,6 @@ export const products: Product[] = [
         image: '/images/images/5823543_7382_590_900.jpg',
         images: [
           '/images/images/5823543_7382_590_900.jpg',
-          '/images/image0 (1).jpeg',
           '/images/images/Tezza-9729.jpg',
           '/images/Screenshot 2026-04-14 231425.png',
         ],

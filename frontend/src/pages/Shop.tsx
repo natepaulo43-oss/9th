@@ -35,36 +35,9 @@ const Shop: React.FC = () => {
   const { cartItems, addToCart, removeFromCart, updateQuantity, cartCount, cartTotal } = useCart();
 
   const getAllImages = (product: Product): string[] => {
-    if (product.colorVariants && product.colorVariants.length > 0) {
-      // Collect all unique images from all color variants
-      const allImages: string[] = [];
-      product.colorVariants.forEach(variant => {
-        if (variant.images) {
-          variant.images.forEach(img => {
-            if (!allImages.includes(img)) {
-              allImages.push(img);
-            }
-          });
-        }
-      });
-      // Sort size chart images to the end
-      return allImages.sort((a, b) => {
-        const aIsSizeChart = a.includes('Screenshot') || a.includes('Chart') || a.includes('size');
-        const bIsSizeChart = b.includes('Screenshot') || b.includes('Chart') || b.includes('size');
-        if (aIsSizeChart && !bIsSizeChart) return 1;
-        if (!aIsSizeChart && bIsSizeChart) return -1;
-        return 0;
-      });
-    }
-    // Also sort for products without color variants
-    const images = product.images || [product.image];
-    return images.sort((a, b) => {
-      const aIsSizeChart = a.includes('Screenshot') || a.includes('Chart') || a.includes('size');
-      const bIsSizeChart = b.includes('Screenshot') || b.includes('Chart') || b.includes('size');
-      if (aIsSizeChart && !bIsSizeChart) return 1;
-      if (!aIsSizeChart && bIsSizeChart) return -1;
-      return 0;
-    });
+    return product.images && product.images.length > 0
+      ? product.images
+      : [product.image];
   };
 
   const getCurrentImage = (product: Product): string => {
