@@ -55,8 +55,9 @@ export const products: Product[] = [
     currency: 'usd',
     image: '/images/images/cream-garment.jpg',
     images: [
-      '/images/images/cream-garment.jpg',
       '/images/image0 (1).jpeg',
+      '/images/images/Tezza-9729.jpg',
+      '/images/images/cream-garment.jpg',
       '/images/Screenshot 2026-04-14 231425.png',
     ],
     category: 'apparel',
@@ -68,6 +69,7 @@ export const products: Product[] = [
         images: [
           '/images/images/cream-garment.jpg',
           '/images/image0 (1).jpeg',
+          '/images/images/Tezza-9729.jpg',
           '/images/Screenshot 2026-04-14 231425.png',
         ],
       },
@@ -78,6 +80,18 @@ export const products: Product[] = [
         images: [
           '/images/images/white-garment.jpg',
           '/images/image0 (1).jpeg',
+          '/images/images/Tezza-9729.jpg',
+          '/images/Screenshot 2026-04-14 231425.png',
+        ],
+      },
+      {
+        color: 'stone',
+        displayName: 'Stone',
+        image: '/images/images/5823543_7382_590_900.jpg',
+        images: [
+          '/images/images/5823543_7382_590_900.jpg',
+          '/images/image0 (1).jpeg',
+          '/images/images/Tezza-9729.jpg',
           '/images/Screenshot 2026-04-14 231425.png',
         ],
       },

@@ -12,6 +12,8 @@ import { db } from '../config/firebase.js';
 
 import { submitOrderToApliiq } from '../lib/apliiq.js';
 
+import { sendReceiptEmail } from '../lib/email.js';
+
 
 
 const DEFAULT_FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -514,6 +516,33 @@ const createStripeRouter = ({
 
         }
 
+        // Send order receipt email to the customer (verify-session path)
+        try {
+          const receiptResult = await sendReceiptEmail({
+            orderId: result.data.id,
+            customerEmail: orderData.customerEmail,
+            customerName: orderData.customerName,
+            items: orderData.items,
+            amountSubtotal: orderData.amountSubtotal,
+            amountTotal: orderData.amountTotal,
+            currency: orderData.currency,
+            shippingAddress: orderData.shippingAddress,
+            shippingName: orderData.shippingName,
+          });
+
+          if (receiptResult.success) {
+            await db.collection('orders').doc(result.data.id).update({
+              receiptEmailSent: true,
+              receiptEmailSentAt: new Date(),
+            });
+            console.log('Receipt email sent (via verify-session):', result.data.id);
+          } else {
+            console.error('Failed to send receipt email (via verify-session):', receiptResult.error);
+          }
+        } catch (emailError) {
+          console.error('Error sending receipt email (via verify-session):', emailError);
+        }
+
         return res.json({ success: true, orderId: result.data.id });
 
       } else {
@@ -758,6 +787,33 @@ const createStripeRouter = ({
 
               }
 
+            }
+
+            // Send order receipt email to the customer
+            try {
+              const receiptResult = await sendReceiptEmail({
+                orderId: result.data.id,
+                customerEmail: orderData.customerEmail,
+                customerName: orderData.customerName,
+                items: orderData.items,
+                amountSubtotal: orderData.amountSubtotal,
+                amountTotal: orderData.amountTotal,
+                currency: orderData.currency,
+                shippingAddress: orderData.shippingAddress,
+                shippingName: orderData.shippingName,
+              });
+
+              if (receiptResult.success) {
+                await db.collection('orders').doc(result.data.id).update({
+                  receiptEmailSent: true,
+                  receiptEmailSentAt: new Date(),
+                });
+                console.log('Receipt email sent successfully:', result.data.id);
+              } else {
+                console.error('Failed to send receipt email:', receiptResult.error);
+              }
+            } catch (emailError) {
+              console.error('Error sending receipt email:', emailError);
             }
 
           } else {

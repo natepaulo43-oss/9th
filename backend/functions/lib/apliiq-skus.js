@@ -46,6 +46,13 @@ export const APLIIQ_SKU_MAPPINGS = {
         'XL': 'APQ-5819567S1A1',
         'XXL': 'APQ-5819567S2A1',
       },
+      'stone': {
+        'S': 'APQ-5823543S6A1',
+        'M': 'APQ-5823543S7A1',
+        'L': 'APQ-5823543S8A1',
+        'XL': 'APQ-5823543S1A1',
+        'XXL': 'APQ-5823543S2A1',
+      },
     },
   },
 };
