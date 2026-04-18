@@ -18,7 +18,7 @@ const sections: {
     title: 'Shipping Policy',
     body: [
       'Shipping availiable worldwide.',
-      'Pre-Orders will all be shipped out on the dropdate.',
+      'Standard shipping takes 7-15 business days.',
     ],
     highlights: [
       'Flat rate shipping of $5.95 on all orders.',

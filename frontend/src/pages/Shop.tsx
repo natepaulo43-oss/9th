@@ -124,7 +124,7 @@ const Shop: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          PRE-ORDER OPEN NOW
+          SHOP NOW
         </motion.h1>
         <motion.p
           className="shop-subtitle"
