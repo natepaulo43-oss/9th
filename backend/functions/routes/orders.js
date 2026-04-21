@@ -14,10 +14,134 @@ import {
   validateOrderUpdate,
   validateOrderQuery,
 } from '../middleware/validation.js';
+import { db } from '../config/firebase.js';
+import {
+  sendReceiptEmail,
+  sendTrackingEmail,
+  sendDeliveryEmail,
+} from '../lib/email.js';
 
 const router = express.Router();
 
-// All order routes require authentication
+/**
+ * POST /orders/admin/resend-emails
+ * Admin utility to (re)send transactional emails for an existing order.
+ * Auth: `Authorization: Bearer <STRIPE_WEBHOOK_SECRET>` (reuses an existing secret).
+ * Body: { orderId: string, types?: Array<'receipt'|'tracking'|'delivery'> }
+ * Mounted BEFORE verifyToken so it does not require a user ID token.
+ */
+router.post('/admin/resend-emails', async (req, res) => {
+  try {
+    const adminSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const authHeader = req.headers['authorization'] || '';
+    const provided = authHeader.startsWith('Bearer ')
+      ? authHeader.slice('Bearer '.length)
+      : '';
+
+    if (!adminSecret || provided !== adminSecret) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { orderId, customerEmail, types, trackingNumber, carrier } = req.body || {};
+    if (!orderId && !customerEmail) {
+      return res.status(400).json({ error: 'orderId or customerEmail is required' });
+    }
+
+    const requestedTypes = Array.isArray(types) && types.length > 0
+      ? types
+      : ['receipt', 'tracking', 'delivery'];
+
+    let orderRef;
+    let orderDoc;
+    if (orderId) {
+      orderRef = db.collection('orders').doc(orderId);
+      orderDoc = await orderRef.get();
+    } else {
+      const snap = await db
+        .collection('orders')
+        .where('customerEmail', '==', customerEmail)
+        .get();
+      if (snap.empty) {
+        return res.status(404).json({ error: 'No order found for customerEmail' });
+      }
+      // Pick the most recently created doc client-side to avoid requiring a composite index
+      const docs = snap.docs.slice().sort((a, b) => {
+        const toMs = (d) => {
+          const v = d.get('createdAt');
+          if (!v) return 0;
+          if (typeof v.toMillis === 'function') return v.toMillis();
+          if (v instanceof Date) return v.getTime();
+          const t = new Date(v).getTime();
+          return Number.isFinite(t) ? t : 0;
+        };
+        return toMs(b) - toMs(a);
+      });
+      orderDoc = docs[0];
+      orderRef = orderDoc.ref;
+    }
+
+    if (!orderDoc.exists) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    const resolvedOrderId = orderDoc.id;
+    let order = orderDoc.data();
+
+    // Optionally patch tracking info on the order before sending tracking email
+    if (trackingNumber) {
+      await orderRef.update({
+        trackingNumber,
+        carrier: carrier || order.carrier || '',
+        status: order.status || 'shipped',
+      });
+      order = { ...order, trackingNumber, carrier: carrier || order.carrier || '' };
+    }
+
+    const results = {};
+
+    if (requestedTypes.includes('receipt')) {
+      results.receipt = await sendReceiptEmail({
+        orderId: resolvedOrderId,
+        customerEmail: order.customerEmail,
+        customerName: order.customerName,
+        items: order.items,
+        amountSubtotal: order.amountSubtotal,
+        amountTotal: order.amountTotal,
+        currency: order.currency,
+        shippingAddress: order.shippingAddress,
+        shippingName: order.shippingName,
+      });
+    }
+
+    if (requestedTypes.includes('tracking')) {
+      if (!order.trackingNumber) {
+        results.tracking = { success: false, error: 'No trackingNumber on order' };
+      } else {
+        results.tracking = await sendTrackingEmail({
+          orderId: resolvedOrderId,
+          customerEmail: order.customerEmail,
+          customerName: order.customerName,
+          trackingNumber: order.trackingNumber,
+          carrier: order.carrier,
+        });
+      }
+    }
+
+    if (requestedTypes.includes('delivery')) {
+      results.delivery = await sendDeliveryEmail({
+        orderId: resolvedOrderId,
+        customerEmail: order.customerEmail,
+        customerName: order.customerName,
+      });
+    }
+
+    return res.json({ orderId: resolvedOrderId, results });
+  } catch (error) {
+    console.error('[Admin] resend-emails error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to resend emails' });
+  }
+});
+
+// All order routes below require authentication
 router.use(verifyToken);
 router.use(lenientRateLimiter);
 
