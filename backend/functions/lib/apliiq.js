@@ -342,6 +342,22 @@ export async function submitOrderToApliiq(order) {
 }
 
 /**
+ * Fetches an order's current status from the Apliiq API.
+ * Used by the polling scheduler to detect when tracking info is added.
+ * @param {string|number} apliiqOrderId - Apliiq's internal order ID
+ * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+ */
+export async function getApliiqOrderStatus(apliiqOrderId) {
+  try {
+    const data = await apliiqRequest('GET', `/v1/Order/${apliiqOrderId}`);
+    return { success: true, data };
+  } catch (error) {
+    console.warn(`[Apliiq] Could not fetch order status for ${apliiqOrderId}:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Validates Apliiq webhook signature
  * @param {string} signature - Signature from webhook headers
  * @param {string} payload - Raw webhook payload

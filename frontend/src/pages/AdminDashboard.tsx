@@ -59,6 +59,8 @@ interface Order {
   fulfilledAt?: Date | null;
   emailSent?: boolean;
   emailSentAt?: Date | null;
+  deliveryEmailSent?: boolean;
+  deliveryEmailSentAt?: Date | null;
 }
 
 interface OrderStats {
@@ -76,6 +78,12 @@ const AdminDashboard: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'not_submitted' | 'submitted' | 'fulfilled'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [fulfillDialog, setFulfillDialog] = useState<{
+    orderId: string;
+    trackingNumber: string;
+    carrier: string;
+  } | null>(null);
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const getAuthToken = useCallback(async (): Promise<string | null> => {
@@ -200,7 +208,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const markAsFulfilled = async (orderId: string, trackingNumber?: string) => {
+  const markAsFulfilled = async (orderId: string, trackingNumber?: string, carrier?: string) => {
     try {
       const token = await getAuthToken();
       if (!token) return;
@@ -211,7 +219,7 @@ const AdminDashboard: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ trackingNumber }),
+        body: JSON.stringify({ trackingNumber, carrier }),
       });
 
       if (response.status === 401) {
@@ -220,12 +228,49 @@ const AdminDashboard: React.FC = () => {
         return;
       }
 
+      const result = await response.json();
+      setFulfillDialog(null);
       fetchOrders();
       fetchStats();
-      alert('Order marked as fulfilled!');
+
+      const trackingEmailStatus = result.emailResults?.tracking;
+      if (trackingNumber && trackingEmailStatus?.success) {
+        alert('Order marked as fulfilled and tracking email sent to customer!');
+      } else if (trackingNumber && trackingEmailStatus?.error) {
+        alert(`Order fulfilled but tracking email failed: ${trackingEmailStatus.error}`);
+      } else {
+        alert('Order marked as fulfilled!');
+      }
     } catch (error) {
       console.error('Error marking order as fulfilled:', error);
       alert('Failed to mark order as fulfilled');
+    }
+  };
+
+  const resendEmail = async (orderId: string, types: string[]) => {
+    const key = `${orderId}-${types.join(',')}`;
+    setResendingEmail(key);
+    try {
+      const response = await fetch(buildApiUrl('/orders/admin/resend-emails'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.REACT_APP_ADMIN_SECRET || ''}`,
+        },
+        body: JSON.stringify({ orderId, types }),
+      });
+      const result = await response.json();
+      const allOk = types.every(t => result.results?.[t]?.success);
+      if (allOk) {
+        alert(`Email(s) resent successfully!`);
+        fetchOrders();
+      } else {
+        alert(`Some emails failed: ${JSON.stringify(result.results)}`);
+      }
+    } catch (err) {
+      alert('Failed to resend email.');
+    } finally {
+      setResendingEmail(null);
     }
   };
 
@@ -248,6 +293,9 @@ const AdminDashboard: React.FC = () => {
     return parts.join(', ');
   };
 
+  const isSubmitted = (apliqStatus: string) =>
+    ['submitted', 'submitted_to_supplier'].includes(apliqStatus);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'not_submitted':
@@ -256,6 +304,7 @@ const AdminDashboard: React.FC = () => {
       case 'submitted':
         return '#ffa500';
       case 'shipped':
+      case 'submitted_to_supplier':
         return '#4dabf7';
       case 'fulfilled':
       case 'fulfillment_complete':
@@ -342,6 +391,7 @@ const AdminDashboard: React.FC = () => {
               <th>Items</th>
               <th>Total</th>
               <th>Status</th>
+              <th>Emails</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -358,8 +408,18 @@ const AdminDashboard: React.FC = () => {
                 <td>{formatCurrency(order.amountTotal, order.currency)}</td>
                 <td>
                   <StatusBadge color={getStatusColor(order.apliqStatus)}>
-                    {order.apliqStatus.replace('_', ' ').toUpperCase()}
+                    {order.apliqStatus.replace(/_/g, ' ').toUpperCase()}
                   </StatusBadge>
+                </td>
+                <td>
+                  <EmailStatusRow>
+                    <EmailDot sent={!!order.emailSent} title={order.emailSent ? 'Tracking email sent' : 'Tracking email not sent'}>
+                      📦
+                    </EmailDot>
+                    <EmailDot sent={!!order.deliveryEmailSent} title={order.deliveryEmailSent ? 'Delivery email sent' : 'Delivery email not sent'}>
+                      ✅
+                    </EmailDot>
+                  </EmailStatusRow>
                 </td>
                 <td>
                   <ActionButtons>
@@ -369,8 +429,8 @@ const AdminDashboard: React.FC = () => {
                         Mark as Submitted
                       </SubmitButton>
                     )}
-                    {order.apliqStatus === 'submitted' && (
-                      <FulfillButton onClick={() => markAsFulfilled(order.id)}>
+                    {isSubmitted(order.apliqStatus) && (
+                      <FulfillButton onClick={() => setFulfillDialog({ orderId: order.id, trackingNumber: order.trackingNumber || '', carrier: order.carrier || 'USPS' })}>
                         Mark as Fulfilled
                       </FulfillButton>
                     )}
@@ -380,6 +440,58 @@ const AdminDashboard: React.FC = () => {
             ))}
           </tbody>
         </OrdersTable>
+      )}
+
+      {fulfillDialog && (
+        <Modal onClick={() => setFulfillDialog(null)}>
+          <ModalContent onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <ModalHeader>
+              <h2>Mark as Fulfilled</h2>
+              <CloseButton onClick={() => setFulfillDialog(null)}>×</CloseButton>
+            </ModalHeader>
+            <ModalBody>
+              <p style={{ color: '#999', marginBottom: '24px', fontSize: '14px' }}>
+                Enter the tracking number from Apliiq. The tracking email will be sent to the customer automatically.
+              </p>
+              <Section>
+                <SectionTitle>Tracking Number</SectionTitle>
+                <FulfillInput
+                  type="text"
+                  placeholder="e.g. 9400111899223397910156"
+                  value={fulfillDialog.trackingNumber}
+                  onChange={(e) => setFulfillDialog({ ...fulfillDialog, trackingNumber: e.target.value })}
+                />
+              </Section>
+              <Section>
+                <SectionTitle>Carrier</SectionTitle>
+                <FulfillSelect
+                  value={fulfillDialog.carrier}
+                  onChange={(e) => setFulfillDialog({ ...fulfillDialog, carrier: e.target.value })}
+                >
+                  <option value="USPS">USPS</option>
+                  <option value="UPS">UPS</option>
+                  <option value="FEDEX">FedEx</option>
+                  <option value="DHL">DHL</option>
+                </FulfillSelect>
+              </Section>
+              <ActionButtons style={{ marginTop: '24px' }}>
+                <FulfillButton
+                  onClick={() => markAsFulfilled(
+                    fulfillDialog.orderId,
+                    fulfillDialog.trackingNumber || undefined,
+                    fulfillDialog.carrier || undefined
+                  )}
+                  style={{ flex: 1, padding: '14px' }}
+                >
+                  Confirm — Send Tracking Email
+                </FulfillButton>
+                <ViewButton onClick={() => setFulfillDialog(null)} style={{ flex: '0 0 auto' }}>
+                  Cancel
+                </ViewButton>
+              </ActionButtons>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
       )}
 
       {selectedOrder && (
@@ -487,14 +599,28 @@ const AdminDashboard: React.FC = () => {
                     <Value>{new Date(selectedOrder.shippedAt).toLocaleDateString()}</Value>
                   </InfoRow>
                 )}
-                {selectedOrder.emailSent && (
-                  <InfoRow>
-                    <Label>Tracking Email:</Label>
-                    <Value>
-                      ✓ Sent {selectedOrder.emailSentAt ? `on ${new Date(selectedOrder.emailSentAt).toLocaleDateString()}` : ''}
-                    </Value>
-                  </InfoRow>
-                )}
+                <InfoRow>
+                  <Label>Tracking Email:</Label>
+                  <Value>
+                    {selectedOrder.emailSent
+                      ? `✓ Sent${selectedOrder.emailSentAt ? ` on ${new Date(selectedOrder.emailSentAt).toLocaleDateString()}` : ''}`
+                      : <ResendLink onClick={() => resendEmail(selectedOrder.id, ['tracking'])}>
+                          {resendingEmail?.startsWith(selectedOrder.id) ? 'Sending...' : '✗ Not sent — Resend'}
+                        </ResendLink>
+                    }
+                  </Value>
+                </InfoRow>
+                <InfoRow>
+                  <Label>Delivery Email:</Label>
+                  <Value>
+                    {selectedOrder.deliveryEmailSent
+                      ? `✓ Sent${selectedOrder.deliveryEmailSentAt ? ` on ${new Date(selectedOrder.deliveryEmailSentAt).toLocaleDateString()}` : ''}`
+                      : <ResendLink onClick={() => resendEmail(selectedOrder.id, ['delivery'])}>
+                          {resendingEmail?.startsWith(selectedOrder.id) ? 'Sending...' : '✗ Not sent — Resend'}
+                        </ResendLink>
+                    }
+                  </Value>
+                </InfoRow>
               </Section>
 
               <Section>
@@ -969,6 +1095,75 @@ const HelpText = styled.p`
   color: #888888;
   margin: 0;
   line-height: 1.5;
+`;
+
+const EmailStatusRow = styled.div`
+  display: flex;
+  gap: 6px;
+  align-items: center;
+`;
+
+const EmailDot = styled.span<{ sent: boolean }>`
+  font-size: 16px;
+  opacity: ${(props) => (props.sent ? 1 : 0.25)};
+  cursor: default;
+`;
+
+const FulfillInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: #555555;
+  }
+
+  &:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+`;
+
+const FulfillSelect = styled.select`
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+
+  option {
+    background: #1a1a1a;
+    color: #ffffff;
+  }
+
+  &:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+`;
+
+const ResendLink = styled.button`
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-family: inherit;
+
+  &:hover {
+    color: #ff9999;
+  }
 `;
 
 export default AdminDashboard;

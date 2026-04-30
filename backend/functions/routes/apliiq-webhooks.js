@@ -1,10 +1,13 @@
 /**
  * Apliiq Webhook Handlers
  * Receives fulfillment notifications from Apliiq
- * 
- * Webhook URLs to configure in Apliiq dashboard:
- * - Fulfillment: https://9thform.com/api/webhooks/apliiq/fulfillment
- * - Shipment Complete: https://9thform.com/api/webhooks/apliiq/shipment-complete
+ *
+ * Webhook URLs to register in the Apliiq dashboard (or with Apliiq support):
+ * - Shipment/Tracking: https://api-lh3ld5zqcq-uc.a.run.app/webhooks/apliiq/fulfillment
+ * - Shipment Complete:  https://api-lh3ld5zqcq-uc.a.run.app/webhooks/apliiq/shipment-complete
+ *
+ * NOTE: Delivery confirmation emails are also sent automatically by the daily
+ * Cloud Scheduler job (deliveryEmailJob) for orders shipped 7+ days ago.
  */
 
 import express from 'express';
@@ -59,21 +62,27 @@ function validateApliiqWebhook(req, res, next) {
  */
 async function findOrderByApliiqId(apliiqOrderId) {
   try {
-    const snapshot = await db
-      .collection('orders')
-      .where('apliiqOrderId', '==', apliiqOrderId)
-      .limit(1)
-      .get();
-    
-    if (snapshot.empty) {
-      return null;
+    // Apliiq may return IDs as numbers or strings; try both to be safe
+    const candidates = [apliiqOrderId];
+    const asNum = Number(apliiqOrderId);
+    if (!isNaN(asNum) && String(asNum) === apliiqOrderId) {
+      candidates.push(asNum);
     }
-    
-    const doc = snapshot.docs[0];
-    return {
-      id: doc.id,
-      data: doc.data(),
-    };
+
+    for (const candidate of candidates) {
+      const snapshot = await db
+        .collection('orders')
+        .where('apliiqOrderId', '==', candidate)
+        .limit(1)
+        .get();
+
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        return { id: doc.id, data: doc.data() };
+      }
+    }
+
+    return null;
   } catch (error) {
     console.error('[Apliiq Webhook] Error finding order:', error);
     throw error;
@@ -95,17 +104,19 @@ router.post('/fulfillment', validateApliiqWebhook, async (req, res) => {
         ? JSON.parse(req.rawBody.toString('utf8'))
         : req.body;
 
-      const {
-        apliiq_order_id,
-        tracking_number,
-        carrier,
-        shipped_at,
-      } = bodyData;
-      
+      // Normalize field names — Apliiq may use different casing/naming conventions
+      const apliiq_order_id = String(
+        bodyData.apliiq_order_id ?? bodyData.order_id ?? bodyData.orderId ?? bodyData.id ?? ''
+      );
+      const tracking_number = bodyData.tracking_number ?? bodyData.trackingNumber ?? '';
+      const carrier = bodyData.carrier ?? bodyData.shipping_carrier ?? bodyData.shippingCarrier ?? '';
+      const shipped_at = bodyData.shipped_at ?? bodyData.shippedAt ?? bodyData.fulfilled_at ?? null;
+
       console.log('[Apliiq Webhook] Fulfillment notification received:', {
         apliiq_order_id,
         tracking_number,
         carrier,
+        raw_keys: Object.keys(bodyData),
       });
       
       if (!apliiq_order_id) {
@@ -189,14 +200,15 @@ router.post('/shipment-complete', validateApliiqWebhook, async (req, res) => {
         ? JSON.parse(req.rawBody.toString('utf8'))
         : req.body;
 
-      const {
-        apliiq_order_id,
-        completed_at,
-      } = bodyData;
-      
+      const apliiq_order_id = String(
+        bodyData.apliiq_order_id ?? bodyData.order_id ?? bodyData.orderId ?? bodyData.id ?? ''
+      );
+      const completed_at = bodyData.completed_at ?? bodyData.completedAt ?? null;
+
       console.log('[Apliiq Webhook] Shipment complete notification received:', {
         apliiq_order_id,
         completed_at,
+        raw_keys: Object.keys(bodyData),
       });
       
       if (!apliiq_order_id) {

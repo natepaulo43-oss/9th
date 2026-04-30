@@ -2,9 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { onRequest } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineString } from 'firebase-functions/params';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { securityHeaders } from './middleware/securityHeaders.js';
 import { standardRateLimiter } from './middleware/rateLimiter.js';
+import { db } from './config/firebase.js';
+import { sendDeliveryEmail, sendTrackingEmail } from './lib/email.js';
 
 import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
@@ -89,4 +93,148 @@ export const api = onRequest(
     region: 'us-central1',
   },
   app
+);
+
+// Job: Poll Apliiq every 4 hours for tracking updates on submitted orders.
+// When Apliiq adds a tracking number, we update Firestore and auto-send the tracking email.
+export const apliiqPollJob = onSchedule(
+  {
+    schedule: '0 */4 * * *', // every 4 hours
+    secrets: [apliiqAppKey, apliiqSharedSecret, resendApiKey],
+    region: 'us-central1',
+  },
+  async () => {
+    const { getApliiqOrderStatus } = await import('./lib/apliiq.js');
+
+    // Find all orders submitted to Apliiq that don't have a tracking number yet
+    const snapshot = await db
+      .collection('orders')
+      .where('apliqStatus', 'in', ['submitted', 'submitted_to_supplier'])
+      .get();
+
+    console.log(`[ApliiqPollJob] Checking ${snapshot.docs.length} submitted order(s) for tracking updates`);
+
+    for (const doc of snapshot.docs) {
+      const order = doc.data();
+
+      // Skip if no valid Apliiq order ID to look up
+      if (!order.apliiqOrderId || order.apliiqOrderId === 'unknown') {
+        console.log(`[ApliiqPollJob] Order ${doc.id} has no valid apliiqOrderId, skipping`);
+        continue;
+      }
+
+      try {
+        const result = await getApliiqOrderStatus(order.apliiqOrderId);
+
+        if (!result.success || !result.data) {
+          console.log(`[ApliiqPollJob] Could not fetch status for order ${doc.id}`);
+          continue;
+        }
+
+        const apliiqData = result.data;
+        console.log(`[ApliiqPollJob] Order ${doc.id} Apliiq data:`, JSON.stringify(apliiqData));
+
+        // Normalize tracking fields (Apliiq may use different casing)
+        const trackingNumber =
+          apliiqData.tracking_number ||
+          apliiqData.trackingNumber ||
+          apliiqData.tracking ||
+          null;
+        const carrier =
+          apliiqData.carrier ||
+          apliiqData.shipping_carrier ||
+          apliiqData.shippingCarrier ||
+          '';
+
+        if (!trackingNumber || trackingNumber === order.trackingNumber) {
+          // No new tracking info
+          continue;
+        }
+
+        console.log(`[ApliiqPollJob] New tracking found for order ${doc.id}: ${trackingNumber}`);
+
+        // Update order in Firestore
+        await doc.ref.update({
+          status: 'shipped',
+          apliqStatus: 'shipped',
+          trackingNumber,
+          carrier,
+          shippedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+
+        // Send tracking email if not already sent
+        if (!order.emailSent && order.customerEmail) {
+          const emailResult = await sendTrackingEmail({
+            orderId: doc.id,
+            customerEmail: order.customerEmail,
+            customerName: order.customerName,
+            trackingNumber,
+            carrier,
+          });
+
+          if (emailResult.success) {
+            await doc.ref.update({
+              emailSent: true,
+              emailSentAt: FieldValue.serverTimestamp(),
+            });
+            console.log(`[ApliiqPollJob] Tracking email sent for order ${doc.id}`);
+          } else {
+            console.error(`[ApliiqPollJob] Failed to send tracking email for order ${doc.id}:`, emailResult.error);
+          }
+        }
+      } catch (err) {
+        console.error(`[ApliiqPollJob] Error processing order ${doc.id}:`, err);
+      }
+    }
+  }
+);
+
+// Daily job: send delivery confirmation emails for orders shipped 7+ days ago.
+// Apliiq cannot report carrier delivery, so we estimate arrival by time elapsed.
+export const deliveryEmailJob = onSchedule(
+  {
+    schedule: '0 14 * * *', // 10 AM ET / 2 PM UTC daily
+    secrets: [resendApiKey],
+    region: 'us-central1',
+  },
+  async () => {
+    const cutoff = Timestamp.fromDate(
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    );
+
+    const snapshot = await db
+      .collection('orders')
+      .where('status', '==', 'shipped')
+      .where('shippedAt', '<', cutoff)
+      .get();
+
+    const pending = snapshot.docs.filter(doc => !doc.data().deliveryEmailSent);
+    console.log(`[DeliveryEmailJob] ${pending.length} order(s) pending delivery email`);
+
+    for (const doc of pending) {
+      const order = doc.data();
+      if (!order.customerEmail) continue;
+
+      try {
+        const result = await sendDeliveryEmail({
+          orderId: doc.id,
+          customerEmail: order.customerEmail,
+          customerName: order.customerName,
+        });
+
+        if (result.success) {
+          await doc.ref.update({
+            deliveryEmailSent: true,
+            deliveryEmailSentAt: FieldValue.serverTimestamp(),
+          });
+          console.log(`[DeliveryEmailJob] Delivery email sent for order ${doc.id}`);
+        } else {
+          console.error(`[DeliveryEmailJob] Failed for order ${doc.id}:`, result.error);
+        }
+      } catch (err) {
+        console.error(`[DeliveryEmailJob] Error for order ${doc.id}:`, err);
+      }
+    }
+  }
 );

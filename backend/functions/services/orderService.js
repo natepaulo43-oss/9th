@@ -153,18 +153,22 @@ export async function markOrderSubmittedToApliiq(orderId, apliqOrderId = null) {
 export async function markOrderFulfilled(orderId, trackingNumber = null) {
   try {
     const updateData = {
-      status: 'fulfilled',
+      status: 'shipped',
       apliqStatus: 'fulfilled',
+      shippedAt: FieldValue.serverTimestamp(),
       fulfilledAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     };
 
     if (trackingNumber) {
       updateData.trackingNumber = trackingNumber;
+      updateData.carrier = updateData.carrier || '';
     }
 
     await db.collection(ORDERS_COLLECTION).doc(orderId).update(updateData);
-    return formatResponse(true);
+
+    const doc = await db.collection(ORDERS_COLLECTION).doc(orderId).get();
+    return formatResponse(true, { id: orderId, ...doc.data() });
   } catch (error) {
     console.error('Error marking order as fulfilled:', error);
     return formatResponse(false, null, error.message || 'Failed to mark order as fulfilled');
@@ -190,7 +194,7 @@ export async function getOrderStats() {
     allOrders.forEach((doc) => {
       const data = doc.data();
       
-      if (data.status === 'fulfilled') {
+      if (data.status === 'fulfilled' || data.status === 'shipped' || data.status === 'fulfillment_complete') {
         stats.fulfilled++;
       } else if (data.status === 'pending') {
         stats.pending++;

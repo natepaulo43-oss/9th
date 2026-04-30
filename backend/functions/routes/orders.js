@@ -15,6 +15,7 @@ import {
   validateOrderQuery,
 } from '../middleware/validation.js';
 import { db } from '../config/firebase.js';
+import { FieldValue } from 'firebase-admin/firestore';
 import {
   sendReceiptEmail,
   sendTrackingEmail,
@@ -237,7 +238,7 @@ router.post('/:orderId/submit-to-apliiq', validateOrderId, async (req, res) => {
 router.post('/:orderId/fulfill', validateOrderId, async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { trackingNumber } = req.body;
+    const { trackingNumber, carrier } = req.body;
 
     const result = await markOrderFulfilled(orderId, trackingNumber);
 
@@ -245,7 +246,33 @@ router.post('/:orderId/fulfill', validateOrderId, async (req, res) => {
       return res.status(500).json({ error: result.error });
     }
 
-    res.json({ message: 'Order marked as fulfilled' });
+    const order = result.data;
+    const emailResults = {};
+
+    if (trackingNumber && order?.customerEmail) {
+      try {
+        const trackingResult = await sendTrackingEmail({
+          orderId,
+          customerEmail: order.customerEmail,
+          customerName: order.customerName,
+          trackingNumber,
+          carrier: carrier || order.carrier || '',
+        });
+        emailResults.tracking = trackingResult;
+
+        if (trackingResult.success) {
+          await db.collection('orders').doc(orderId).update({
+            emailSent: true,
+            emailSentAt: FieldValue.serverTimestamp(),
+          });
+        }
+      } catch (emailError) {
+        console.error('[Fulfill] Error sending tracking email:', emailError);
+        emailResults.tracking = { success: false, error: emailError.message };
+      }
+    }
+
+    res.json({ message: 'Order marked as fulfilled', emailResults });
   } catch (error) {
     console.error('Error marking order as fulfilled:', error);
     res.status(500).json({ error: 'Failed to mark order as fulfilled' });
