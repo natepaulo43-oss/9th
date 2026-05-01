@@ -146,6 +146,71 @@ router.post('/admin/resend-emails', async (req, res) => {
 router.use(verifyToken);
 router.use(lenientRateLimiter);
 
+/**
+ * POST /orders/resend-email
+ * Resend a tracking or delivery email for an order.
+ * Auth: Firebase ID token (admin dashboard).
+ * Body: { orderId: string, types: Array<'tracking'|'delivery'> }
+ */
+router.post('/resend-email', async (req, res) => {
+  try {
+    const { orderId, types } = req.body || {};
+    if (!orderId) {
+      return res.status(400).json({ error: 'orderId is required' });
+    }
+
+    const requestedTypes = Array.isArray(types) && types.length > 0
+      ? types
+      : ['tracking'];
+
+    const orderDoc = await db.collection('orders').doc(orderId).get();
+    if (!orderDoc.exists) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    const order = orderDoc.data();
+    const results = {};
+
+    if (requestedTypes.includes('tracking')) {
+      if (!order.trackingNumber) {
+        results.tracking = { success: false, error: 'No trackingNumber on order' };
+      } else {
+        results.tracking = await sendTrackingEmail({
+          orderId,
+          customerEmail: order.customerEmail,
+          customerName: order.customerName,
+          trackingNumber: order.trackingNumber,
+          carrier: order.carrier,
+        });
+        if (results.tracking.success) {
+          await db.collection('orders').doc(orderId).update({
+            emailSent: true,
+            emailSentAt: FieldValue.serverTimestamp(),
+          });
+        }
+      }
+    }
+
+    if (requestedTypes.includes('delivery')) {
+      results.delivery = await sendDeliveryEmail({
+        orderId,
+        customerEmail: order.customerEmail,
+        customerName: order.customerName,
+      });
+      if (results.delivery.success) {
+        await db.collection('orders').doc(orderId).update({
+          deliveryEmailSent: true,
+          deliveryEmailSentAt: FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    return res.json({ orderId, results });
+  } catch (error) {
+    console.error('[Orders] resend-email error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to resend email' });
+  }
+});
+
 router.get('/', validateOrderQuery, async (req, res) => {
   try {
     const { status, apliqStatus, limit, startAfter } = req.query;

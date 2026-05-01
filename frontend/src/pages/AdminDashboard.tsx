@@ -251,11 +251,14 @@ const AdminDashboard: React.FC = () => {
     const key = `${orderId}-${types.join(',')}`;
     setResendingEmail(key);
     try {
-      const response = await fetch(buildApiUrl('/orders/admin/resend-emails'), {
+      const token = await getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(buildApiUrl('/orders/resend-email'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REACT_APP_ADMIN_SECRET || ''}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ orderId, types }),
       });
