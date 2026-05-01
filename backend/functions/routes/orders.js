@@ -171,15 +171,32 @@ router.post('/resend-email', async (req, res) => {
     const results = {};
 
     if (requestedTypes.includes('tracking')) {
-      if (!order.trackingNumber) {
-        results.tracking = { success: false, error: 'No trackingNumber on order' };
+      // Accept common field-name variants in case legacy / manually-edited docs
+      // store tracking under a different key.
+      const trackingNumber =
+        order.trackingNumber ||
+        order.tracking_number ||
+        order.tracking ||
+        '';
+      const carrier = order.carrier || order.shipping_carrier || order.shippingCarrier || '';
+
+      if (!trackingNumber) {
+        console.warn(
+          `[Orders] resend-email: no tracking field on order ${orderId}. Keys present:`,
+          Object.keys(order)
+        );
+        results.tracking = {
+          success: false,
+          error: 'No trackingNumber on order',
+          fieldsPresent: Object.keys(order),
+        };
       } else {
         results.tracking = await sendTrackingEmail({
           orderId,
           customerEmail: order.customerEmail,
           customerName: order.customerName,
-          trackingNumber: order.trackingNumber,
-          carrier: order.carrier,
+          trackingNumber,
+          carrier,
         });
         if (results.tracking.success) {
           await db.collection('orders').doc(orderId).update({

@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { defineString } from 'firebase-functions/params';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { securityHeaders } from './middleware/securityHeaders.js';
@@ -234,6 +235,92 @@ export const deliveryEmailJob = onSchedule(
         }
       } catch (err) {
         console.error(`[DeliveryEmailJob] Error for order ${doc.id}:`, err);
+      }
+    }
+  }
+);
+
+/**
+ * Firestore trigger: fires whenever an order document is updated.
+ * Auto-sends the tracking email the moment a trackingNumber is added,
+ * regardless of how it got there (Apliiq webhook, poll job, admin UI,
+ * or direct Firestore edit). Idempotent: checks `emailSent` to avoid
+ * double-sending.
+ */
+export const orderTrackingEmailTrigger = onDocumentUpdated(
+  {
+    document: 'orders/{orderId}',
+    secrets: [resendApiKey],
+    region: 'us-central1',
+  },
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+
+    const orderId = event.params.orderId;
+
+    // Normalize to handle any field name variants that could exist in legacy docs
+    const beforeTracking = before.trackingNumber || before.tracking_number || before.tracking || '';
+    const afterTracking = after.trackingNumber || after.tracking_number || after.tracking || '';
+
+    // Did a tracking number just appear (or change)? And we haven't sent the email yet?
+    const trackingNewlySet = !beforeTracking && !!afterTracking;
+    const trackingChanged = beforeTracking && afterTracking && beforeTracking !== afterTracking;
+    const shouldSendTracking =
+      (trackingNewlySet || trackingChanged) && !after.emailSent && !!after.customerEmail;
+
+    if (shouldSendTracking) {
+      try {
+        console.log(`[OrderTrigger] Auto-sending tracking email for order ${orderId} (tracking=${afterTracking})`);
+        const result = await sendTrackingEmail({
+          orderId,
+          customerEmail: after.customerEmail,
+          customerName: after.customerName,
+          trackingNumber: afterTracking,
+          carrier: after.carrier || '',
+        });
+
+        if (result.success) {
+          await event.data.after.ref.update({
+            emailSent: true,
+            emailSentAt: FieldValue.serverTimestamp(),
+          });
+          console.log(`[OrderTrigger] Tracking email sent for order ${orderId}`);
+        } else {
+          console.error(`[OrderTrigger] Tracking email failed for order ${orderId}:`, result.error);
+        }
+      } catch (err) {
+        console.error(`[OrderTrigger] Error sending tracking email for order ${orderId}:`, err);
+      }
+    }
+
+    // Auto-send delivery email the moment status flips to a "delivered" state.
+    const deliveredStatuses = ['delivered', 'fulfillment_complete'];
+    const becameDelivered =
+      !deliveredStatuses.includes(before.status) &&
+      deliveredStatuses.includes(after.status);
+
+    if (becameDelivered && !after.deliveryEmailSent && !!after.customerEmail) {
+      try {
+        console.log(`[OrderTrigger] Auto-sending delivery email for order ${orderId}`);
+        const result = await sendDeliveryEmail({
+          orderId,
+          customerEmail: after.customerEmail,
+          customerName: after.customerName,
+        });
+
+        if (result.success) {
+          await event.data.after.ref.update({
+            deliveryEmailSent: true,
+            deliveryEmailSentAt: FieldValue.serverTimestamp(),
+          });
+          console.log(`[OrderTrigger] Delivery email sent for order ${orderId}`);
+        } else {
+          console.error(`[OrderTrigger] Delivery email failed for order ${orderId}:`, result.error);
+        }
+      } catch (err) {
+        console.error(`[OrderTrigger] Error sending delivery email for order ${orderId}:`, err);
       }
     }
   }
