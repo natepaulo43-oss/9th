@@ -76,10 +76,11 @@ function generateApliiqAuthHeader(appKey, sharedSecret, timestamp, nonce, payloa
 /**
  * Converts a Firestore string ID to a stable unsigned 32-bit integer.
  * Apliiq's API docs show numeric values for `number` and `order_number`.
+ * Exported so callers can reconstruct the same lookup key used in order submission.
  * @param {string} strId
  * @returns {number}
  */
-function toNumericOrderId(strId) {
+export function toNumericOrderId(strId) {
   let hash = 0;
   for (let i = 0; i < strId.length; i++) {
     hash = (hash * 31 + strId.charCodeAt(i)) >>> 0; // keep unsigned 32-bit
@@ -308,28 +309,36 @@ function convertOrderToApliiqFormat(order) {
 export async function submitOrderToApliiq(order) {
   try {
     console.log(`[Apliiq] Submitting order ${order.id} to Apliiq`);
-    
+
     // Convert order to Apliiq format
     const apliiqPayload = convertOrderToApliiqFormat(order);
-    
+
+    // Compute the numeric ID we're sending — store it so the poll job can use it
+    // as a fallback lookup key if Apliiq doesn't echo back an ID in the response.
+    const orderId = order.id || order.stripeSessionId;
+    const numericId = toNumericOrderId(orderId);
+
     console.log(`[Apliiq] Order payload:`, JSON.stringify(apliiqPayload, null, 2));
-    
+
     // Submit order to Apliiq API
     // Endpoint: POST /v1/Order
     const response = await apliiqRequest('POST', '/v1/Order', apliiqPayload);
-    
-    // Apliiq may return id, order_id, or orderId — accept any
-    const apliiqOrderId = response?.id || response?.order_id || response?.orderId;
-    
+
+    // Apliiq may return id, order_id, or orderId — accept any.
+    // Fall back to the numeric ID we sent if the response omits it.
+    const apliiqOrderId = response?.id || response?.order_id || response?.orderId || numericId;
+
     console.log(`[Apliiq] Order submitted successfully (full response):`, JSON.stringify(response));
     console.log(`[Apliiq] Order submitted:`, {
       orderId: order.id,
       apliiqOrderId,
+      numericId,
     });
-    
+
     return {
       success: true,
-      apliiqOrderId: apliiqOrderId || 'unknown',
+      apliiqOrderId: String(apliiqOrderId),
+      numericId,
     };
   } catch (error) {
     console.error(`[Apliiq] Failed to submit order ${order.id}:`, error);

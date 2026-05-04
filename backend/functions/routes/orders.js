@@ -124,6 +124,12 @@ router.post('/admin/resend-emails', async (req, res) => {
           trackingNumber: order.trackingNumber,
           carrier: order.carrier,
         });
+        if (results.tracking.success) {
+          await orderRef.update({
+            emailSent: true,
+            emailSentAt: FieldValue.serverTimestamp(),
+          });
+        }
       }
     }
 
@@ -139,6 +145,102 @@ router.post('/admin/resend-emails', async (req, res) => {
   } catch (error) {
     console.error('[Admin] resend-emails error:', error);
     return res.status(500).json({ error: error.message || 'Failed to resend emails' });
+  }
+});
+
+/**
+ * POST /orders/admin/force-apliiq-sync
+ * Immediately polls Apliiq for tracking on all submitted orders that lack one.
+ * Updating Firestore with a tracking number triggers orderTrackingEmailTrigger,
+ * which auto-sends the customer email.
+ * Auth: `Authorization: Bearer <STRIPE_WEBHOOK_SECRET>`
+ */
+router.post('/admin/force-apliiq-sync', async (req, res) => {
+  try {
+    const adminSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const authHeader = req.headers['authorization'] || '';
+    const provided = authHeader.startsWith('Bearer ')
+      ? authHeader.slice('Bearer '.length)
+      : '';
+
+    if (!adminSecret || provided !== adminSecret) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { getApliiqOrderStatus, toNumericOrderId } = await import('../lib/apliiq.js');
+    const { FieldValue } = await import('firebase-admin/firestore');
+
+    const snapshot = await db
+      .collection('orders')
+      .where('apliqStatus', 'in', ['submitted', 'submitted_to_supplier'])
+      .get();
+
+    const results = [];
+
+    for (const doc of snapshot.docs) {
+      const order = doc.data();
+
+      // Skip orders that already have a tracking number
+      if (order.trackingNumber) {
+        results.push({ orderId: doc.id, status: 'skipped', reason: 'already_has_tracking' });
+        continue;
+      }
+
+      // Resolve the best lookup ID (same logic as the poll job)
+      let lookupId = (!order.apliiqOrderId || order.apliiqOrderId === 'unknown')
+        ? null
+        : order.apliiqOrderId;
+      if (!lookupId) {
+        lookupId = order.apliiqNumericId || toNumericOrderId(doc.id);
+      }
+
+      try {
+        const apliiqResult = await getApliiqOrderStatus(lookupId);
+
+        if (!apliiqResult.success || !apliiqResult.data) {
+          results.push({ orderId: doc.id, lookupId, status: 'apliiq_fetch_failed', error: apliiqResult.error });
+          continue;
+        }
+
+        const apliiqData = apliiqResult.data;
+        const trackingNumber =
+          apliiqData.tracking_number ||
+          apliiqData.trackingNumber ||
+          apliiqData.tracking ||
+          null;
+        const carrier =
+          apliiqData.carrier ||
+          apliiqData.shipping_carrier ||
+          apliiqData.shippingCarrier ||
+          '';
+
+        if (!trackingNumber) {
+          results.push({ orderId: doc.id, lookupId, status: 'no_tracking_yet' });
+          continue;
+        }
+
+        // Update Firestore — orderTrackingEmailTrigger fires and sends the email
+        await doc.ref.update({
+          status: 'shipped',
+          apliqStatus: 'shipped',
+          trackingNumber,
+          carrier,
+          shippedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+
+        results.push({ orderId: doc.id, lookupId, status: 'updated', trackingNumber, carrier });
+      } catch (err) {
+        results.push({ orderId: doc.id, lookupId, status: 'error', error: err.message });
+      }
+    }
+
+    const updated = results.filter(r => r.status === 'updated').length;
+    console.log(`[ForceApliiqSync] Processed ${results.length} order(s), updated ${updated}`);
+    return res.json({ processed: results.length, updated, results });
+  } catch (error) {
+    console.error('[Admin] force-apliiq-sync error:', error);
+    return res.status(500).json({ error: error.message || 'Sync failed' });
   }
 });
 

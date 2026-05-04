@@ -105,7 +105,7 @@ export const apliiqPollJob = onSchedule(
     region: 'us-central1',
   },
   async () => {
-    const { getApliiqOrderStatus } = await import('./lib/apliiq.js');
+    const { getApliiqOrderStatus, toNumericOrderId } = await import('./lib/apliiq.js');
 
     // Find all orders submitted to Apliiq that don't have a tracking number yet
     const snapshot = await db
@@ -118,14 +118,21 @@ export const apliiqPollJob = onSchedule(
     for (const doc of snapshot.docs) {
       const order = doc.data();
 
-      // Skip if no valid Apliiq order ID to look up
-      if (!order.apliiqOrderId || order.apliiqOrderId === 'unknown') {
-        console.log(`[ApliiqPollJob] Order ${doc.id} has no valid apliiqOrderId, skipping`);
-        continue;
+      // Resolve the best ID to use for the Apliiq API lookup:
+      // 1. Use stored apliiqOrderId if valid
+      // 2. Fall back to apliiqNumericId stored at submission time
+      // 3. Compute the numeric hash of the Firestore doc ID (matches what we sent to Apliiq)
+      let lookupId = (!order.apliiqOrderId || order.apliiqOrderId === 'unknown')
+        ? null
+        : order.apliiqOrderId;
+
+      if (!lookupId) {
+        lookupId = order.apliiqNumericId || toNumericOrderId(doc.id);
+        console.log(`[ApliiqPollJob] Order ${doc.id} has unknown apliiqOrderId; using computed lookupId=${lookupId}`);
       }
 
       try {
-        const result = await getApliiqOrderStatus(order.apliiqOrderId);
+        const result = await getApliiqOrderStatus(lookupId);
 
         if (!result.success || !result.data) {
           console.log(`[ApliiqPollJob] Could not fetch status for order ${doc.id}`);

@@ -462,6 +462,8 @@ const createStripeRouter = ({
 
                 apliiqOrderId: apliiqResult.apliiqOrderId,
 
+                apliiqNumericId: apliiqResult.numericId,
+
                 status: 'submitted_to_supplier',
 
                 apliqStatus: 'submitted',
@@ -724,6 +726,8 @@ const createStripeRouter = ({
                   await db.collection('orders').doc(result.data.id).update({
 
                     apliiqOrderId: apliiqResult.apliiqOrderId,
+
+                    apliiqNumericId: apliiqResult.numericId,
 
                     status: 'submitted_to_supplier',
 
