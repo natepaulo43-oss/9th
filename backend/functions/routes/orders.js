@@ -202,17 +202,19 @@ router.post('/admin/force-apliiq-sync', async (req, res) => {
           continue;
         }
 
-        const apliiqData = apliiqResult.data;
+        // Apliiq returns an array; grab first element
+        const apliiqData = Array.isArray(apliiqResult.data) ? apliiqResult.data[0] : apliiqResult.data;
+        const sn = apliiqData?.SN?.[0] || apliiqData?.sn?.[0];
         const trackingNumber =
-          apliiqData.tracking_number ||
-          apliiqData.trackingNumber ||
-          apliiqData.tracking ||
+          sn?.TrackingNumber ||
+          sn?.trackingNumber ||
+          sn?.tracking_number ||
+          apliiqData?.tracking_number ||
+          apliiqData?.trackingNumber ||
+          apliiqData?.tracking ||
           null;
-        const carrier =
-          apliiqData.carrier ||
-          apliiqData.shipping_carrier ||
-          apliiqData.shippingCarrier ||
-          '';
+        const serviceName = sn?.Service || sn?.service || apliiqData?.carrier || '';
+        const carrier = serviceName.match(/\b(USPS|UPS|FedEx|DHL)\b/i)?.[1]?.toUpperCase() || '';
 
         if (!trackingNumber) {
           results.push({ orderId: doc.id, lookupId, status: 'no_tracking_yet' });

@@ -139,20 +139,23 @@ export const apliiqPollJob = onSchedule(
           continue;
         }
 
-        const apliiqData = result.data;
+        // Apliiq returns an array; grab first element
+        const apliiqData = Array.isArray(result.data) ? result.data[0] : result.data;
         console.log(`[ApliiqPollJob] Order ${doc.id} Apliiq data:`, JSON.stringify(apliiqData));
 
-        // Normalize tracking fields (Apliiq may use different casing)
+        // Tracking lives under SN[0].TrackingNumber; fall back to top-level fields
+        const sn = apliiqData?.SN?.[0] || apliiqData?.sn?.[0];
         const trackingNumber =
-          apliiqData.tracking_number ||
-          apliiqData.trackingNumber ||
-          apliiqData.tracking ||
+          sn?.TrackingNumber ||
+          sn?.trackingNumber ||
+          sn?.tracking_number ||
+          apliiqData?.tracking_number ||
+          apliiqData?.trackingNumber ||
+          apliiqData?.tracking ||
           null;
-        const carrier =
-          apliiqData.carrier ||
-          apliiqData.shipping_carrier ||
-          apliiqData.shippingCarrier ||
-          '';
+        // Derive carrier name from Service string (e.g. "USPS Ground Advantage" → "USPS")
+        const serviceName = sn?.Service || sn?.service || apliiqData?.carrier || '';
+        const carrier = serviceName.match(/\b(USPS|UPS|FedEx|DHL)\b/i)?.[1]?.toUpperCase() || '';
 
         if (!trackingNumber || trackingNumber === order.trackingNumber) {
           // No new tracking info
