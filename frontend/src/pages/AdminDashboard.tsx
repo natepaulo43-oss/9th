@@ -247,6 +247,40 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const markAsDelivered = async (orderId: string) => {
+    try {
+      const token = await getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(buildApiUrl(`/orders/${orderId}/mark-delivered`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        setAuthError('Session expired. Please login again.');
+        navigate('/admin/login');
+        return;
+      }
+
+      const result = await response.json();
+      fetchOrders();
+      fetchStats();
+
+      if (result.emailSent) {
+        alert('Order marked as delivered and delivery email sent to customer!');
+      } else {
+        alert(`Order marked as delivered but email failed: ${result.emailError || 'unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error marking order as delivered:', error);
+      alert('Failed to mark order as delivered');
+    }
+  };
+
   const resendEmail = async (orderId: string, types: string[]) => {
     const key = `${orderId}-${types.join(',')}`;
     setResendingEmail(key);
@@ -436,6 +470,11 @@ const AdminDashboard: React.FC = () => {
                       <FulfillButton onClick={() => setFulfillDialog({ orderId: order.id, trackingNumber: order.trackingNumber || '', carrier: order.carrier || 'USPS' })}>
                         Mark as Fulfilled
                       </FulfillButton>
+                    )}
+                    {order.apliqStatus === 'shipped' && !order.deliveryEmailSent && (
+                      <DeliveredButton onClick={() => markAsDelivered(order.id)}>
+                        Mark Delivered
+                      </DeliveredButton>
                     )}
                   </ActionButtons>
                 </td>
@@ -921,10 +960,21 @@ const FulfillButton = styled(Button)`
   background: rgba(81, 207, 102, 0.2);
   border-color: #51cf66;
   color: #51cf66;
-  
+
   &:hover {
     background: rgba(81, 207, 102, 0.3);
     border-color: #51cf66;
+  }
+`;
+
+const DeliveredButton = styled(Button)`
+  background: rgba(77, 171, 247, 0.2);
+  border-color: #4dabf7;
+  color: #4dabf7;
+
+  &:hover {
+    background: rgba(77, 171, 247, 0.3);
+    border-color: #4dabf7;
   }
 `;
 

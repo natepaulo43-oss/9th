@@ -139,6 +139,12 @@ router.post('/admin/resend-emails', async (req, res) => {
         customerEmail: order.customerEmail,
         customerName: order.customerName,
       });
+      if (results.delivery.success) {
+        await orderRef.update({
+          deliveryEmailSent: true,
+          deliveryEmailSentAt: FieldValue.serverTimestamp(),
+        });
+      }
     }
 
     return res.json({ orderId: resolvedOrderId, results });
@@ -418,6 +424,48 @@ router.post('/:orderId/submit-to-apliiq', validateOrderId, async (req, res) => {
   } catch (error) {
     console.error('Error marking order as submitted:', error);
     res.status(500).json({ error: 'Failed to mark order as submitted' });
+  }
+});
+
+/**
+ * POST /orders/:orderId/mark-delivered
+ * Marks an order as delivered and sends the delivery confirmation email.
+ * Used by the admin dashboard for manual override.
+ */
+router.post('/:orderId/mark-delivered', validateOrderId, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const orderDoc = await db.collection('orders').doc(orderId).get();
+    if (!orderDoc.exists) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    const order = orderDoc.data();
+
+    await db.collection('orders').doc(orderId).update({
+      status: 'fulfillment_complete',
+      apliqStatus: 'fulfillment_complete',
+      fulfilledAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    const emailResult = await sendDeliveryEmail({
+      orderId,
+      customerEmail: order.customerEmail,
+      customerName: order.customerName,
+    });
+
+    if (emailResult.success) {
+      await db.collection('orders').doc(orderId).update({
+        deliveryEmailSent: true,
+        deliveryEmailSentAt: FieldValue.serverTimestamp(),
+      });
+    }
+
+    return res.json({ message: 'Order marked as delivered', emailSent: emailResult.success, emailError: emailResult.error });
+  } catch (error) {
+    console.error('Error marking order as delivered:', error);
+    return res.status(500).json({ error: 'Failed to mark order as delivered' });
   }
 });
 

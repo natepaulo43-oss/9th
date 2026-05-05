@@ -198,11 +198,69 @@ export const apliiqPollJob = onSchedule(
         console.error(`[ApliiqPollJob] Error processing order ${doc.id}:`, err);
       }
     }
+
+    // Second pass: check shipped orders for Apliiq completion/delivery status.
+    // Apliiq may return a fulfillment status once the carrier confirms delivery.
+    const shippedSnapshot = await db
+      .collection('orders')
+      .where('apliqStatus', '==', 'shipped')
+      .where('deliveryEmailSent', '==', false)
+      .get();
+
+    console.log(`[ApliiqPollJob] Checking ${shippedSnapshot.docs.length} shipped order(s) for delivery confirmation`);
+
+    for (const doc of shippedSnapshot.docs) {
+      const order = doc.data();
+
+      let lookupId = (!order.apliiqOrderId || order.apliiqOrderId === 'unknown')
+        ? null
+        : order.apliiqOrderId;
+      if (!lookupId) {
+        lookupId = order.apliiqNumericId || toNumericOrderId(doc.id);
+      }
+
+      try {
+        const result = await getApliiqOrderStatus(lookupId);
+        if (!result.success || !result.data) continue;
+
+        const apliiqData = Array.isArray(result.data) ? result.data[0] : result.data;
+
+        // Check any status field Apliiq might use to indicate the order is complete/delivered
+        const rawStatus = (
+          apliiqData?.FulfillmentStatus ||
+          apliiqData?.fulfillment_status ||
+          apliiqData?.Status ||
+          apliiqData?.status ||
+          apliiqData?.OrderStatus ||
+          apliiqData?.order_status ||
+          ''
+        ).toLowerCase();
+
+        const isComplete = ['complete', 'completed', 'fulfilled', 'delivered', 'fulfillment_complete'].some(
+          (s) => rawStatus.includes(s)
+        );
+
+        if (!isComplete) continue;
+
+        console.log(`[ApliiqPollJob] Order ${doc.id} shows complete status from Apliiq: "${rawStatus}"`);
+
+        await doc.ref.update({
+          status: 'fulfillment_complete',
+          apliqStatus: 'fulfillment_complete',
+          fulfilledAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        // orderTrackingEmailTrigger fires on this update and sends the delivery email
+      } catch (err) {
+        console.error(`[ApliiqPollJob] Error checking delivery for order ${doc.id}:`, err);
+      }
+    }
   }
 );
 
-// Daily job: send delivery confirmation emails for orders shipped 7+ days ago.
+// Daily job: send delivery confirmation emails for orders shipped 5+ days ago.
 // Apliiq cannot report carrier delivery, so we estimate arrival by time elapsed.
+// 5 days covers ~95% of USPS Ground Advantage deliveries (typical 2-5 business days).
 export const deliveryEmailJob = onSchedule(
   {
     schedule: '0 14 * * *', // 10 AM ET / 2 PM UTC daily
@@ -211,7 +269,7 @@ export const deliveryEmailJob = onSchedule(
   },
   async () => {
     const cutoff = Timestamp.fromDate(
-      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
     );
 
     const snapshot = await db
