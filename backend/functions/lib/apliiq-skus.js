@@ -55,6 +55,17 @@ export const APLIIQ_SKU_MAPPINGS = {
       },
     },
   },
+
+  'The Glide Tee': {
+    productName: 'The Glide Tee',
+    skus: {
+      'S': 'APQ-5907267S6A1',
+      'M': 'APQ-5907267S7A1',
+      'L': 'APQ-5907267S8A1',
+      'XL': 'APQ-5907267S1A1',
+      'XXL': 'APQ-5907267S2A1',
+    },
+  },
 };
 
 /**

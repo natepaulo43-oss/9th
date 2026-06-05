@@ -78,6 +78,24 @@ const productCatalog = new Map([
 
   ],
 
+  [
+
+    'prod_UeP9MPCNPrdlxF',
+
+    {
+
+      name: 'The Glide Tee',
+
+      price: 3199,
+
+      currency: 'usd',
+
+      image: '/images/images/longboarders mockup.jpg',
+
+    },
+
+  ],
+
 ]);
 
 

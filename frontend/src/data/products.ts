@@ -96,6 +96,19 @@ export const products: Product[] = [
       },
     ],
   },
+  {
+    id: 'prod_UeP9MPCNPrdlxF',
+    name: 'The Glide Tee',
+    description: 'Built for motion with style. The Glide Tee features a relaxed oversized fit and a timeless stripe graphic. Crafted from 100% cotton with a heavyweight feel and soft finish.\n\nOversized, boxy fit\n100% cotton\n7.5 oz heavyweight fabric\nOrder your normal size; size down for a more fitted look',
+    price: 3199,
+    currency: 'usd',
+    image: '/images/images/longboarders mockup.jpg',
+    images: [
+      '/images/images/longboarders mockup.jpg',
+      '/images/Screenshot 2026-04-14 231425.png',
+    ],
+    category: 'apparel',
+  },
 ];
 
 export const APPAREL_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
