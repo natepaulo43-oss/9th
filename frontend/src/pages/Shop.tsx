@@ -95,7 +95,12 @@ const Shop: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Unable to start checkout. Please try again.');
+        let serverMessage = 'Unable to start checkout. Please try again.';
+        try {
+          const errData = await response.json();
+          if (errData?.error) serverMessage = errData.error;
+        } catch {}
+        throw new Error(serverMessage);
       }
 
       const data = await response.json();
