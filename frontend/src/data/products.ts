@@ -109,6 +109,18 @@ export const products: Product[] = [
     ],
     category: 'apparel',
   },
+  {
+    id: 'prod_UklokvriH3B3yz',
+    name: 'Triple Cord Cap',
+    description: 'Built for movement. Three marks of momentum. Everyday structure with a clean embroidered finish. Built to last.',
+    price: 3499,
+    currency: 'usd',
+    image: '/images/5808643_6043-2026-06-08-22-44-48-401.png',
+    images: [
+      '/images/5808643_6043-2026-06-08-22-44-48-401.png',
+    ],
+    category: 'hat',
+  },
 ];
 
 export const APPAREL_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];

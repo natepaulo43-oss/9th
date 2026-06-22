@@ -96,6 +96,24 @@ const productCatalog = new Map([
 
   ],
 
+  [
+
+    'prod_UklokvriH3B3yz',
+
+    {
+
+      name: 'Triple Cord Cap',
+
+      price: 3499,
+
+      currency: 'usd',
+
+      image: '/images/5808643_6043-2026-06-08-22-44-48-401.png',
+
+    },
+
+  ],
+
 ]);
 
 

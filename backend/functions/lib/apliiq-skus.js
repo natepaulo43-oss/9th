@@ -66,6 +66,13 @@ export const APLIIQ_SKU_MAPPINGS = {
       'XXL': 'APQ-5907267S2A1',
     },
   },
+
+  'Triple Cord Cap': {
+    productName: 'Triple Cord Cap',
+    skus: {
+      'ONE_SIZE': 'APQ-5808643S34A1',
+    },
+  },
 };
 
 /**
