@@ -1,20 +1,15 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { products, formatCurrency, APPAREL_SIZES, Product } from '../data/products';
 import './Shop.css';
 
 const resolveApiBaseUrl = () => {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-
+  if (typeof window === 'undefined') return '';
   if (window.location.hostname === 'localhost') {
     return process.env.REACT_APP_API_URL || 'http://localhost:5000';
   }
-
-  // Production traffic stays same-origin and is proxied via Netlify redirects.
   return '';
 };
 
@@ -24,8 +19,93 @@ const buildApiUrl = (path: string) => {
   return base ? `${base}${normalizedPath}` : normalizedPath;
 };
 
+interface ShopDisplayItem {
+  key: string;
+  productId: string;
+  name: string;
+  subtitle?: string;
+  price: number;
+  description: string;
+  transparentImage: string;
+  defaultColor?: string;
+  category: 'hat' | 'apparel';
+}
+
+const SHOP_ITEMS: ShopDisplayItem[] = [
+  {
+    key: 'skate-hat',
+    productId: 'prod_TRRTgFMRWW7OZS',
+    name: 'Canvas 9thform Skate Hat',
+    price: 3499,
+    description: 'Premium canvas surf style hat with iconic 9thform skate logo. Designed for comfort and style.',
+    transparentImage: '/images/transparent/canvas-9thform-skate-hat.png',
+    category: 'hat',
+  },
+  {
+    key: 'falling-guy-hat',
+    productId: 'prod_TRRUrKA3MQ9fay',
+    name: 'Canvas 9thform Falling Guy Hat',
+    price: 3499,
+    description: 'Premium canvas surf hat with 9thform Falling Guy logo. Designed for comfort and style.',
+    transparentImage: '/images/transparent/canvas-9thform-falling-guy-hat.png',
+    category: 'hat',
+  },
+  {
+    key: 'phased-motion-cream',
+    productId: 'prod_UFcE8PRgn7qBzR',
+    name: 'Phased Motion Tee',
+    subtitle: 'Cream',
+    price: 3199,
+    description: 'Oversized fit. 100% organic cotton. 7.5 oz heavyweight. Boxy, cropped.',
+    transparentImage: '/images/transparent/phased-motion-tee-cream-removebg-preview.png',
+    defaultColor: 'cream',
+    category: 'apparel',
+  },
+  {
+    key: 'phased-motion-stone',
+    productId: 'prod_UFcE8PRgn7qBzR',
+    name: 'Phased Motion Tee',
+    subtitle: 'Stone',
+    price: 3199,
+    description: 'Oversized fit. 100% organic cotton. 7.5 oz heavyweight. Boxy, cropped.',
+    transparentImage: '/images/transparent/phased-motion-tee-stone-removebg-preview.png',
+    defaultColor: 'stone',
+    category: 'apparel',
+  },
+  {
+    key: 'phased-motion-white',
+    productId: 'prod_UFcE8PRgn7qBzR',
+    name: 'Phased Motion Tee',
+    subtitle: 'White',
+    price: 3199,
+    description: 'Oversized fit. 100% organic cotton. 7.5 oz heavyweight. Boxy, cropped.',
+    transparentImage: '/images/transparent/phased-motion-tee-white-removebg-preview.png',
+    defaultColor: 'white',
+    category: 'apparel',
+  },
+  {
+    key: 'glide-tee',
+    productId: 'prod_UeP9MPCNPrdlxF',
+    name: 'The Glide Tee',
+    price: 3199,
+    description: 'Relaxed oversized fit. Timeless stripe graphic. 100% cotton, 7.5 oz heavyweight.',
+    transparentImage: '/images/transparent/the-glide-tee-removebg-preview.png',
+    category: 'apparel',
+  },
+  {
+    key: 'triple-cord-cap',
+    productId: 'prod_UklokvriH3B3yz',
+    name: 'Triple Cord Cap',
+    price: 3499,
+    description: 'Three marks of momentum. Everyday structure with a clean embroidered finish.',
+    transparentImage: '/images/transparent/triple-cord-cap-removebg-preview.png',
+    category: 'hat',
+  },
+];
+
 const Shop: React.FC = () => {
-  const [selectedImage, setSelectedImage] = useState<Record<string, number>>({});
+  const navigate = useNavigate();
+  const [activePanelId, setActivePanelId] = useState<string | null>(null);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [sizeModalProduct, setSizeModalProduct] = useState<Product | null>(null);
@@ -34,39 +114,61 @@ const Shop: React.FC = () => {
 
   const { cartItems, addToCart, removeFromCart, updateQuantity, cartCount, cartTotal } = useCart();
 
-  const getAllImages = (product: Product): string[] => {
-    return product.images && product.images.length > 0
-      ? product.images
-      : [product.image];
-  };
+  // Detect touch-only devices (no hover capability)
+  const isTouchDevice = useMemo(
+    () => typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches,
+    []
+  );
 
-  const getCurrentImage = (product: Product): string => {
-    const images = getAllImages(product);
-    if (selectedImage[product.id] !== undefined) {
-      return images[selectedImage[product.id]];
+  // Close active panel when tapping outside on mobile
+  useEffect(() => {
+    if (!activePanelId) return;
+    const handleOutside = (e: TouchEvent) => {
+      if (!(e.target as Element).closest('.floating-product')) {
+        setActivePanelId(null);
+      }
+    };
+    document.addEventListener('touchstart', handleOutside);
+    return () => document.removeEventListener('touchstart', handleOutside);
+  }, [activePanelId]);
+
+  const handleItemClick = (item: ShopDisplayItem) => {
+    if (isTouchDevice) {
+      if (activePanelId === item.key) {
+        navigate(`/product/${item.productId}`);
+      } else {
+        setActivePanelId(item.key);
+      }
+    } else {
+      navigate(`/product/${item.productId}`);
     }
-    return images[0];
   };
 
-  const handleAddToCart = (product: Product, size?: string, color?: string) => {
-    // Check if product requires size selection
-    if (product.category === 'apparel' && !size) {
+  const handlePanelAddToCart = (e: React.MouseEvent, item: ShopDisplayItem) => {
+    e.stopPropagation();
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) return;
+
+    if (product.category === 'apparel') {
       setSizeModalProduct(product);
       setSelectedSize('');
-      setSelectedColor('');
+      setSelectedColor(item.defaultColor || '');
       return;
     }
+    addToCart(product);
+  };
 
-    addToCart(product, size, color);
+  const handleViewProduct = (e: React.MouseEvent, item: ShopDisplayItem) => {
+    e.stopPropagation();
+    navigate(`/product/${item.productId}`);
   };
 
   const handleSizeSelection = () => {
     if (sizeModalProduct && selectedSize) {
-      // Check if product has color variants and color is required
       if (sizeModalProduct.colorVariants && sizeModalProduct.colorVariants.length > 0 && !selectedColor) {
-        return; // Don't add to cart if color is required but not selected
+        return;
       }
-      handleAddToCart(sizeModalProduct, selectedSize, selectedColor || undefined);
+      addToCart(sizeModalProduct, selectedSize, selectedColor || undefined);
       setSizeModalProduct(null);
       setSelectedSize('');
       setSelectedColor('');
@@ -81,9 +183,7 @@ const Shop: React.FC = () => {
     try {
       const response = await fetch(buildApiUrl('/stripe/create-checkout-session'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: cartItems.map((item) => ({
             productId: item.product.id,
@@ -143,64 +243,54 @@ const Shop: React.FC = () => {
 
       <div className="shop-content">
         <div className="products-section">
-          <div className="products-container">
-            {products.map((product, index) => (
+          <div className="floating-products-grid">
+            {SHOP_ITEMS.map((item, index) => (
               <motion.div
-                key={product.id}
-                className="product-card"
-                initial={{ opacity: 0, y: 50 }}
+                key={item.key}
+                className={`floating-product${activePanelId === item.key ? ' panel-active' : ''}`}
+                initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.2, duration: 0.6 }}
-                whileHover={{ y: -5 }}
+                transition={{ delay: index * 0.07, duration: 0.55, ease: 'easeOut' }}
+                onClick={() => handleItemClick(item)}
               >
-                <Link to={`/product/${product.id}`} className="product-card-link">
-                  <div className="product-image-container">
-                    <div className="product-image-frame">
-                      <img
-                        src={getCurrentImage(product)}
-                        alt={product.name}
-                        className={`product-image ${getCurrentImage(product).includes('Screenshot') || getCurrentImage(product).includes('Chart') || getCurrentImage(product).includes('size') ? 'size-chart-image' : ''}`}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = '/images/logo1.png';
-                        }}
-                      />
-                    </div>
-                  </div>
-                </Link>
-                {(() => {
-                  const allImages = getAllImages(product);
-                  return allImages.length > 1 && (
-                    <div className="image-thumbnails-row">
-                      {allImages.map((img, imgIndex) => (
-                        <button
-                          key={imgIndex}
-                          className={`thumbnail ${selectedImage[product.id] === imgIndex ? 'active' : ''}`}
-                          onClick={() => setSelectedImage({ ...selectedImage, [product.id]: imgIndex })}
-                        >
-                          <img src={img} alt={`${product.name} view ${imgIndex + 1}`} />
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })()}
+                <div className="fp-image-wrap">
+                  <img
+                    src={item.transparentImage}
+                    alt={item.name + (item.subtitle ? ` - ${item.subtitle}` : '')}
+                    className="fp-image"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/logo1.png';
+                    }}
+                  />
+                </div>
 
-                <div className="product-info">
-                  <Link to={`/product/${product.id}`} className="product-name-link">
-                    <h2 className="product-name">{product.name}</h2>
-                  </Link>
-                  <p className="product-description">{product.description}</p>
-                  <div className="product-footer">
-                    <span className="product-price">{formatCurrency(product.price, product.currency)}</span>
-                    <button
-                      className="add-to-cart-button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleAddToCart(product);
-                      }}
-                    >
-                      Add to Cart
-                    </button>
+                <div
+                  className="fp-panel"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="fp-panel-header">
+                    <span className="fp-name">{item.name}</span>
+                    {item.subtitle && (
+                      <span className="fp-subtitle">{item.subtitle}</span>
+                    )}
+                  </div>
+                  <p className="fp-description">{item.description}</p>
+                  <div className="fp-footer">
+                    <span className="fp-price">{formatCurrency(item.price)}</span>
+                    <div className="fp-actions">
+                      <button
+                        className="fp-view-btn"
+                        onClick={(e) => handleViewProduct(e, item)}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="fp-cart-btn"
+                        onClick={(e) => handlePanelAddToCart(e, item)}
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -222,7 +312,10 @@ const Shop: React.FC = () => {
               <p className="empty-cart">Your cart is empty. Add a piece of 9thform to get started.</p>
             ) : (
               cartItems.map((item, idx) => (
-                <div className="cart-item" key={`${item.product.id}-${item.size || 'no-size'}-${item.color || 'no-color'}-${idx}`}>
+                <div
+                  className="cart-item"
+                  key={`${item.product.id}-${item.size || 'no-size'}-${item.color || 'no-color'}-${idx}`}
+                >
                   <div className="cart-item-thumb">
                     <img src={item.product.image} alt={item.product.name} />
                   </div>
@@ -230,8 +323,16 @@ const Shop: React.FC = () => {
                     <div className="cart-item-header">
                       <h3 className="cart-item-name">
                         {item.product.name}
-                        {item.color && <span style={{ fontSize: '0.9em', opacity: 0.7, marginLeft: '8px', textTransform: 'capitalize' }}>({item.color})</span>}
-                        {item.size && <span style={{ fontSize: '0.9em', opacity: 0.7, marginLeft: '8px' }}>({item.size})</span>}
+                        {item.color && (
+                          <span style={{ fontSize: '0.9em', opacity: 0.7, marginLeft: '8px', textTransform: 'capitalize' }}>
+                            ({item.color})
+                          </span>
+                        )}
+                        {item.size && (
+                          <span style={{ fontSize: '0.9em', opacity: 0.7, marginLeft: '8px' }}>
+                            ({item.size})
+                          </span>
+                        )}
                       </h3>
                       <button
                         className="remove-item"
@@ -292,7 +393,7 @@ const Shop: React.FC = () => {
       {/* Size Selection Modal */}
       {sizeModalProduct && (
         <div className="size-modal-overlay" onClick={() => setSizeModalProduct(null)}>
-          <motion.div 
+          <motion.div
             className="size-modal"
             onClick={(e) => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.9 }}
@@ -301,11 +402,12 @@ const Shop: React.FC = () => {
           >
             <h3>Select Options</h3>
             <p className="size-modal-product">{sizeModalProduct.name}</p>
-            
-            {/* Color Selection */}
+
             {sizeModalProduct.colorVariants && sizeModalProduct.colorVariants.length > 0 && (
               <>
-                <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', fontWeight: '500' }}>Color</h4>
+                <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', fontWeight: '500' }}>
+                  Color
+                </h4>
                 <div className="size-options">
                   {sizeModalProduct.colorVariants.map((variant) => (
                     <button
@@ -320,9 +422,10 @@ const Shop: React.FC = () => {
                 </div>
               </>
             )}
-            
-            {/* Size Selection */}
-            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', fontWeight: '500' }}>Size</h4>
+
+            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', fontWeight: '500' }}>
+              Size
+            </h4>
             <div className="size-options">
               {APPAREL_SIZES.map((size) => (
                 <button
@@ -334,8 +437,9 @@ const Shop: React.FC = () => {
                 </button>
               ))}
             </div>
+
             <div className="size-modal-actions">
-              <button 
+              <button
                 className="size-modal-cancel"
                 onClick={() => {
                   setSizeModalProduct(null);
@@ -345,10 +449,15 @@ const Shop: React.FC = () => {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="size-modal-confirm"
                 onClick={handleSizeSelection}
-                disabled={!selectedSize || (sizeModalProduct.colorVariants && sizeModalProduct.colorVariants.length > 0 && !selectedColor)}
+                disabled={
+                  !selectedSize ||
+                  (sizeModalProduct.colorVariants &&
+                    sizeModalProduct.colorVariants.length > 0 &&
+                    !selectedColor)
+                }
               >
                 Add to Cart
               </button>
@@ -361,4 +470,3 @@ const Shop: React.FC = () => {
 };
 
 export default Shop;
-
