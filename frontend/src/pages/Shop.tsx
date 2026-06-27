@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -113,13 +113,10 @@ const Shop: React.FC = () => {
 
   const { cartItems, addToCart, removeFromCart, updateQuantity, cartCount, cartTotal } = useCart();
 
-  // Detect touch-only devices (no hover capability)
-  const isTouchDevice = useMemo(
-    () => typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches,
-    []
-  );
+  // Tracks whether a touchstart just opened the panel so the subsequent click doesn't navigate
+  const touchOpenedPanel = useRef(false);
 
-  // Close all panels when tapping outside a product card — no React state, no re-render
+  // Close all panels when tapping outside a product card
   useEffect(() => {
     const handleOutside = (e: TouchEvent) => {
       if (!(e.target as Element).closest('.floating-product')) {
@@ -132,20 +129,29 @@ const Shop: React.FC = () => {
     return () => document.removeEventListener('touchstart', handleOutside);
   }, []);
 
-  const handleItemClick = (e: React.MouseEvent, item: ShopDisplayItem) => {
-    if (!isTouchDevice) {
-      navigate(`/product/${item.productId}`);
-      return;
-    }
+  // onTouchStart fires the instant the finger touches — zero delay, no device detection needed.
+  // Desktop never fires touchstart so desktop click behavior is unchanged.
+  const handleTouchStart = (e: React.TouchEvent, item: ShopDisplayItem) => {
     const card = e.currentTarget as HTMLElement;
     if (card.classList.contains('panel-active')) {
-      navigate(`/product/${item.productId}`);
-    } else {
-      document.querySelectorAll('.floating-product.panel-active').forEach(el => {
-        el.classList.remove('panel-active');
-      });
-      card.classList.add('panel-active');
+      // Panel already open — let the click through to navigate
+      touchOpenedPanel.current = false;
+      return;
     }
+    touchOpenedPanel.current = true;
+    document.querySelectorAll('.floating-product.panel-active').forEach(el => {
+      el.classList.remove('panel-active');
+    });
+    card.classList.add('panel-active');
+  };
+
+  const handleItemClick = (e: React.MouseEvent, item: ShopDisplayItem) => {
+    if (touchOpenedPanel.current) {
+      // Panel was just opened by touch — block this synthetic click
+      touchOpenedPanel.current = false;
+      return;
+    }
+    navigate(`/product/${item.productId}`);
   };
 
   const handlePanelAddToCart = (e: React.MouseEvent, item: ShopDisplayItem) => {
@@ -255,6 +261,7 @@ const Shop: React.FC = () => {
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.07, duration: 0.55, ease: 'easeOut' }}
+                onTouchStart={(e) => handleTouchStart(e, item)}
                 onClick={(e) => handleItemClick(e, item)}
               >
                 <div className="fp-image-wrap">

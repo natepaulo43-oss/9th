@@ -606,7 +606,7 @@
     transition: opacity 0.18s ease, transform 0.18s ease;
   }
 
-  /* Touch screens don't truly hover; .panel-active (set by JS) is the trigger */
+  /* Suppress sticky hover (iOS applies :hover on tap and holds it) */
   .floating-product:hover .fp-panel {
     opacity: 0;
     transform: translateY(10px);
@@ -615,6 +615,14 @@
 
   .floating-product:hover .fp-image {
     transform: none;
+  }
+
+  /* panel-active MUST come after the hover suppression above so it wins the cascade
+     when iOS sticky hover and panel-active are both present simultaneously */
+  .floating-product.panel-active .fp-panel {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
   }
 
   .floating-product.panel-active .fp-image {
