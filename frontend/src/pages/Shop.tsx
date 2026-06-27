@@ -105,7 +105,6 @@ const SHOP_ITEMS: ShopDisplayItem[] = [
 
 const Shop: React.FC = () => {
   const navigate = useNavigate();
-  const [activePanelId, setActivePanelId] = useState<string | null>(null);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [sizeModalProduct, setSizeModalProduct] = useState<Product | null>(null);
@@ -120,27 +119,32 @@ const Shop: React.FC = () => {
     []
   );
 
-  // Close active panel when tapping outside on mobile
+  // Close all panels when tapping outside a product card — no React state, no re-render
   useEffect(() => {
-    if (!activePanelId) return;
     const handleOutside = (e: TouchEvent) => {
       if (!(e.target as Element).closest('.floating-product')) {
-        setActivePanelId(null);
+        document.querySelectorAll('.floating-product.panel-active').forEach(el => {
+          el.classList.remove('panel-active');
+        });
       }
     };
     document.addEventListener('touchstart', handleOutside, { passive: true });
     return () => document.removeEventListener('touchstart', handleOutside);
-  }, [activePanelId]);
+  }, []);
 
-  const handleItemClick = (item: ShopDisplayItem) => {
-    if (isTouchDevice) {
-      if (activePanelId === item.key) {
-        navigate(`/product/${item.productId}`);
-      } else {
-        setActivePanelId(item.key);
-      }
-    } else {
+  const handleItemClick = (e: React.MouseEvent, item: ShopDisplayItem) => {
+    if (!isTouchDevice) {
       navigate(`/product/${item.productId}`);
+      return;
+    }
+    const card = e.currentTarget as HTMLElement;
+    if (card.classList.contains('panel-active')) {
+      navigate(`/product/${item.productId}`);
+    } else {
+      document.querySelectorAll('.floating-product.panel-active').forEach(el => {
+        el.classList.remove('panel-active');
+      });
+      card.classList.add('panel-active');
     }
   };
 
@@ -247,11 +251,11 @@ const Shop: React.FC = () => {
             {SHOP_ITEMS.map((item, index) => (
               <motion.div
                 key={item.key}
-                className={`floating-product${activePanelId === item.key ? ' panel-active' : ''}`}
+                className="floating-product"
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.07, duration: 0.55, ease: 'easeOut' }}
-                onClick={() => handleItemClick(item)}
+                onClick={(e) => handleItemClick(e, item)}
               >
                 <div className="fp-image-wrap">
                   <img
