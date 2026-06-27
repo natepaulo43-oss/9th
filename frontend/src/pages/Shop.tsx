@@ -128,7 +128,7 @@ const Shop: React.FC = () => {
         setActivePanelId(null);
       }
     };
-    document.addEventListener('touchstart', handleOutside);
+    document.addEventListener('touchstart', handleOutside, { passive: true });
     return () => document.removeEventListener('touchstart', handleOutside);
   }, [activePanelId]);
 
