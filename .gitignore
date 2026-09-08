@@ -8,3 +8,10 @@ node_modules
 .netlify
 
 DEPLOYMENT_CHECKLIST.md
+
+# Secret-bearing local scripts / files (never commit real credential values)
+backend/set-apliiq-secrets.ps1
+backend/set-apliiq-secrets.bat
+backend/functions/.apliiq_app_key.tmp
+backend/functions/.apliiq_shared_secret.tmp
+*.tmp
