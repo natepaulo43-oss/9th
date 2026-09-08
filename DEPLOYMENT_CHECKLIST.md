@@ -26,11 +26,11 @@ cd backend
 
 # Set Stripe secret key
 firebase functions:secrets:set STRIPE_SECRET_KEY
-# Paste: REDACTED_STRIPE_TEST_SECRET_KEY
+
 
 # Set Stripe webhook secret (temporary - will update after webhook creation)
 firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
-# Paste: REDACTED_STRIPE_WEBHOOK_SECRET
+
 ```
 
 ### Step 2: Deploy Backend
