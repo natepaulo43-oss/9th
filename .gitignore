@@ -4,6 +4,10 @@ node_modules
 .env.*
 !.env.example
 
+# Build output
+frontend/build
+build
+
 # Local Netlify folder
 .netlify
 
