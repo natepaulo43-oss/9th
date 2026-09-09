@@ -15,7 +15,7 @@ React frontend, Firebase (Auth, Firestore, Cloud Functions) backend, Stripe for 
 ## Key technical decisions
 
 - **Automated the full order lifecycle**: Stripe webhook → order saved to Firestore → Apliiq fulfillment API → tracking/delivery emails via Resend, with scheduled polling jobs to catch status changes Apliiq doesn't push.
-- **Ran a real OWASP-based security pass** on the production app — authenticated admin routes, input validation middleware, rate limiting, and CSP/security headers — documented in [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
+- **Ran a real OWASP-based security pass** on the production app — authenticated admin routes, input validation middleware, rate limiting, and CSP/security headers.
 - **Idempotent, replay-safe webhook handling**: Stripe webhook signature verification preserved through the middleware chain, with numeric order IDs computed deterministically from Firestore string IDs to satisfy Apliiq's numeric-ID requirement without a lookup table.
 
 ## Live
@@ -25,4 +25,3 @@ React frontend, Firebase (Auth, Firestore, Cloud Functions) backend, Stripe for 
 ## Docs
 
 - [Product Requirements Doc](9_thform_online_store_prd.md)
-- [Security Audit](SECURITY_AUDIT.md)
